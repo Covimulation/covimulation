@@ -51,13 +51,12 @@ class Random_Geometric_Graph(Graph):
 
 
 def main():
-    random.seed(a=1, version=2)
+    random.seed(1)
     G = Random_Geometric_Graph(n=10, r=0.3)
     for v in sorted(list(G.vertices), key=lambda v: v.id):
         print(v.id)
         print(v.coordinates)
         print(v.neighbors)
-    print(G.size)
 
 
 if __name__ == "__main__":
