@@ -6,11 +6,17 @@ class Vertex:
         self.id = id
         self.neighbors = set(neighbors)
 
-    def add_neighbor(self, vertex):
-        self.neighbors.add(vertex.id)
+    def add_neighbor(self, u):
+        self.neighbors.add(u)
 
-    def has_neighbor(self, vertex):
-        return vertex.id in self.neighbors
+    def has_neighbor(self, u):
+        return u in self.neighbors
+
+    def print_neighbors(self, increasing=False):
+        if increasing:
+            print(sorted([u.id for u in self.neighbors]))
+        else:
+            print([u.id for u in self.neighbors])
 
 
 class Graph:
@@ -19,9 +25,9 @@ class Graph:
         self.directed = directed
         self.size = len(vertices)
 
-    def add_vertex(self, v):
-        for u in self.vertices:
-            if v.has_neighbor(u):
-                u.add_neighbor(v)
-        self.vertices.add(v)
+    def add_vertex(self, u):
+        for v in self.vertices:
+            if u.has_neighbor(v):
+                v.add_neighbor(u)
+        self.vertices.add(u)
         self.size += 1
