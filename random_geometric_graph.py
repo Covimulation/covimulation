@@ -18,9 +18,8 @@ class Geometric_Vertex(Vertex):
 
 
 class Grid:
-    def __init__(self, r, dim=2, a=0, b=1, t=3):
+    def __init__(self, r, a=0, b=1, t=3):
         self.r = r
-        self.dim = dim
         self.a = a
         self.b = b
         self.t = t
@@ -33,15 +32,33 @@ class Grid:
             sector.append(int(x_i / side))
         self.sector(tuple(sector)).add(u)
 
-    def adjacent_grids(self, sector, d):
+    def adjacent_sectors(self, sector, d):
+        adjacent_sector = [x - d for x in sector]
+        yield adjacent_sector
+        for x in range(1, 2 * d + 1):
+            adjacent_sector[0] += x
+            yield adjacent_sector
+        for y in range(1, 2 * d + 1):
+            adjacent_sector[1] += y
+            yield adjacent_sector
+        for x in range(1, 2 * d + 1):
+            adjacent_sector[0] -= x
+            yield adjacent_sector
+        for y in range(1, 2 * d + 1):
+            adjacent_sector[1] -= 1
+            yield adjacent_sector
+
+    def adjacent_nodes(self, u, d):
         vertices = set()
+        for sector in self.adjacent_sectors(u, d):
+            vertices = vertices.union(self.sector[sector])
+        return vertices
 
 
 class Random_Geometric_Graph(Graph):
-    def __init__(self, n, r, d=2, a=0, b=1):
+    def __init__(self, n, r, a=0, b=1):
         super().__init__(vertices=set(), directed=False)
         self.r = r
-        self.d = d
         self.a = a
         self.b = b
         self.size = 0
@@ -58,7 +75,7 @@ class Random_Geometric_Graph(Graph):
 
     def create_vertex(self, id):
         coordinates = []
-        for _ in range(self.d):
+        for _ in range(2):
             coordinates.append(random.uniform(self.a, self.b))
         v = Geometric_Vertex(id, coordinates)
         self.add_vertex(v)
