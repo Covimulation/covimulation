@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import random
+from collections import defaultdict
 from graph import Vertex, Graph
 
 
@@ -14,6 +15,26 @@ class Geometric_Vertex(Vertex):
         for x_p, x_q in zip(self.coordinates, u.coordinates):
             d += (x_p - x_q) ** 2
         return d ** 0.5
+
+
+class Grid:
+    def __init__(self, r, dim=2, a=0, b=1, t=3):
+        self.r = r
+        self.dim = dim
+        self.a = a
+        self.b = b
+        self.t = t
+        self.sector = defaultdict(set())
+
+    def assign_grid(self, u):
+        sector = []
+        side = (self.b - self.a) / self.t
+        for x_i in u.coordinates:
+            sector.append(int(x_i / side))
+        self.sector(tuple(sector)).add(u)
+
+    def adjacent_grids(self, sector, d):
+        vertices = set()
 
 
 class Random_Geometric_Graph(Graph):
