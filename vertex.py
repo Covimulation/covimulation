@@ -58,8 +58,8 @@ class Person(Contact_Vertex):
     def has_recovered(self):
         return self.status == "R"
 
-    def has_not_recovered(self):
-        return not self.has_recovered()
+    def is_susceptible(self):
+        return self.status == "S"
 
     def print_status(self):
         if self.status == "S":

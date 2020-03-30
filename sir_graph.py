@@ -6,12 +6,18 @@ from contact_graph import Contact_Graph
 
 
 class SIR_Graph(Contact_Graph):
-    def __init__(self, n, p, p_initial, t=None, a=0, b=1):
+    def __init__(self, n, p, p_initial, recovery_time=14, t=None, a=0, b=1):
         self.p = p
         self.p_initial = p_initial
-        self.time = 0
+
+        self.recovery_time = recovery_time
+        self.current_time = 0
+
         self.number_infected = 0
+        self.number_recovered = 0
+
         self.infected = set()
+        self.recovered = set()
         super().__init__(n, t, a, b)
         self.people = self.vertices
         print(self.number_infected, len(self.infected))
@@ -26,7 +32,7 @@ class SIR_Graph(Contact_Graph):
         person = Person(id, coordinates)
         p = random.uniform(0, 1)
         if p <= self.p_initial:
-            person.becomes_infected(self.time)
+            person.becomes_infected(self.current_time)
             self.infected.add(person)
             self.number_infected += 1
         self.add_person(person)
@@ -45,33 +51,47 @@ class SIR_Graph(Contact_Graph):
 
     def round(self):
         infected_this_round = set()
+        recovers_this_round = set()
         for person in self.infected:
             for contact in person.neighbors:
-                if contact.has_not_recovered():
+                if contact.is_susceptible():
                     p = random.uniform(0, 1)
                     if p <= self.p:
                         infected_this_round.add(contact)
+            if self.current_time - person.infection_time >= self.recovery_time:
+                recovers_this_round.add(person)
+
         for contact in infected_this_round:
             self.infected.add(contact)
-            contact.becomes_infected(self.time)
-        self.number_infected = len(self.infected)
-        self.time += 1
+            self.number_infected += 1
+            contact.becomes_infected(self.current_time)
 
-    def simulation(self, num_rounds, user_input=False):
+        for contact in recovers_this_round:
+            contact.recovers()
+            self.infected.remove(contact)
+            self.number_infected -= 1
+            self.recovered.add(contact)
+            self.number_recovered += 1
+
+        self.number_infected = len(self.infected)
+        self.current_time += 1
+
+    def simulation(self, num_rounds):
+        print(f"{'Round':^5} {'Number Infected': ^20} {'Number Recovered': ^20}")
+        print(
+            f"{self.current_time:^5} {self.number_infected: ^20} {self.number_recovered: ^20}"
+        )
         for _ in range(num_rounds):
             self.round()
-            if user_input:
-                x = input("Press 1 to print graph")
-                if x == "1":
-                    print(self.number_infected)
-                    # self.print_graph()
+            print(
+                f"{self.current_time:^5} {self.number_infected: ^20} {self.number_recovered: ^20}"
+            )
 
 
 def main():
-    random.seed(1)
     G = SIR_Graph(n=10 ** 3, p=0.01, p_initial=0.01)
     # G.print_graph()
-    G.simulation(5, True)
+    G.simulation(16)
     # for v in sorted(list(G.vertices), key=lambda v: v.id):
     #     print(v.id)
     #     print(v.coordinates)
