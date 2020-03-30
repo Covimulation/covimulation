@@ -13,14 +13,17 @@ class SIR_Graph(Contact_Graph):
         self.recovery_time = recovery_time
         self.current_time = 0
 
+        self.number_suspectible = n
         self.number_infected = 0
         self.number_recovered = 0
 
+        self.susceptible = set()
         self.infected = set()
         self.recovered = set()
+
         super().__init__(n, t, a, b)
-        self.people = self.vertices
-        print(self.number_infected, len(self.infected))
+        self.number_of_new_cases = [self.number_infected]
+        self.growth_factor = [float("inf")]
 
     def add_person(self, person):
         self.add_vertex(person)
@@ -35,19 +38,10 @@ class SIR_Graph(Contact_Graph):
             person.becomes_infected(self.current_time)
             self.infected.add(person)
             self.number_infected += 1
-        self.add_person(person)
-
-    def print_graph(self, increasing=True):
-        if increasing:
-            for person in sorted(self.people, key=lambda p: p.id):
-                print(f"{person.id} - {person.status}")
-                print("\t", end="")
-                person.print_neighbors()
+            self.number_suspectible -= 1
         else:
-            for person in self.people:
-                print(f"{person.id} - {person.status}")
-                print("\t", end="")
-                person.print_neighbors()
+            self.susceptible.add(person)
+        self.add_person(person)
 
     def round(self):
         infected_this_round = set()
@@ -66,6 +60,9 @@ class SIR_Graph(Contact_Graph):
             self.number_infected += 1
             contact.becomes_infected(self.current_time)
 
+            self.susceptible.remove(contact)
+            self.number_suspectible -= 1
+
         for contact in recovers_this_round:
             contact.recovers()
             self.infected.remove(contact)
@@ -73,25 +70,33 @@ class SIR_Graph(Contact_Graph):
             self.recovered.add(contact)
             self.number_recovered += 1
 
-        self.number_infected = len(self.infected)
         self.current_time += 1
+        prev = self.number_of_new_cases[-1]
+        curr = len(infected_this_round)
+        self.number_of_new_cases.append(len(infected_this_round))
+        if prev:
+            self.growth_factor.append(curr / prev)
 
     def simulation(self, num_rounds):
-        print(f"{'Round':^5} {'Number Infected': ^20} {'Number Recovered': ^20}")
         print(
-            f"{self.current_time:^5} {self.number_infected: ^20} {self.number_recovered: ^20}"
+            f"{'Round':^5} {'Number Susceptible': ^20} {'Number Infected': ^20} {'Number Recovered': ^20}"
+        )
+        print(
+            f"{self.current_time: ^5} {self.number_suspectible: ^20} {self.number_infected: ^20} {self.number_recovered: ^20}"
         )
         for _ in range(num_rounds):
             self.round()
             print(
-                f"{self.current_time:^5} {self.number_infected: ^20} {self.number_recovered: ^20}"
+                f"{self.current_time: ^5} {self.number_suspectible: ^20} {self.number_infected: ^20} {self.number_recovered: ^20}"
             )
 
 
 def main():
     G = SIR_Graph(n=10 ** 3, p=0.01, p_initial=0.01)
     # G.print_graph()
-    G.simulation(16)
+    G.simulation(48)
+    print(G.growth_factor)
+
     # for v in sorted(list(G.vertices), key=lambda v: v.id):
     #     print(v.id)
     #     print(v.coordinates)

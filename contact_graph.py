@@ -42,7 +42,7 @@ class Contact_Graph(Graph):
         while len(u.neighbors) < u.k + 1 and i < self.t - min(u.sector):
             s = len(u.neighbors)
             new_nodes = self.Grid.adjacent_nodes(u, i)
-            if s + len(new_nodes) > u.k:
+            if s + len(new_nodes) > u.k + 1:
                 new_nodes = sorted(list(new_nodes), key=lambda v: u.distance(v))
                 new_nodes = set(new_nodes[: u.k - s])
             u.neighbors = u.neighbors.union(self.Grid.adjacent_nodes(u, i))
