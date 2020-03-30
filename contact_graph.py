@@ -21,6 +21,9 @@ class Contact_Graph(Graph):
             self.create_vertex(i)
         for u in self.vertices:
             self.update_edges(u)
+        for u in self.vertices:
+            for v in u.neighbors:
+                v.neighbors.add(u)
 
     def add_vertex(self, u):
         self.vertices.add(u)
@@ -36,7 +39,7 @@ class Contact_Graph(Graph):
 
     def update_edges(self, u):
         i = 0
-        while len(u.neighbors) < u.k:
+        while len(u.neighbors) < u.k + 1 and i < self.t - min(u.sector):
             s = len(u.neighbors)
             new_nodes = self.Grid.adjacent_nodes(u, i)
             if s + len(new_nodes) > u.k:
@@ -44,11 +47,13 @@ class Contact_Graph(Graph):
                 new_nodes = set(new_nodes[: u.k - s])
             u.neighbors = u.neighbors.union(self.Grid.adjacent_nodes(u, i))
             i += 1
+        u.neighbors.remove(u)
 
 
 def main():
     random.seed(1)
-    G = Contact_Graph(n=10 ** 6)
+    G = Contact_Graph(n=10)
+    G.print_graph()
     # for v in sorted(list(G.vertices), key=lambda v: v.id):
     #     print(v.id)
     #     print(v.coordinates)

@@ -44,6 +44,7 @@ class Random_Geometric_Graph(Graph):
         for v in self.Grid.adjacent_nodes(u, i):
             if u.distance(v) <= self.r:
                 u.neighbors.add(v)
+        u.neighbors.remove(u)
 
 
 def main():
