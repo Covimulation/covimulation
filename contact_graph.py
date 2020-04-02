@@ -47,12 +47,13 @@ class Contact_Graph(Graph):
                 new_nodes = set(new_nodes[: u.k - s])
             u.neighbors = u.neighbors.union(self.Grid.adjacent_nodes(u, i))
             i += 1
-        u.neighbors.remove(u)
+        if u in u.neighbors:
+            u.neighbors.remove(u)
 
 
 def main():
     random.seed(1)
-    G = Contact_Graph(n=10)
+    G = Contact_Graph(n=10 ** 3)
     G.print_graph()
     # for v in sorted(list(G.vertices), key=lambda v: v.id):
     #     print(v.id)

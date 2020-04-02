@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import numpy as np
+import random
 
 
 class Vertex:
@@ -37,13 +38,15 @@ class Geometric_Vertex(Vertex):
 class Contact_Vertex(Geometric_Vertex):
     def __init__(self, id, coordinates):
         super().__init__(id, coordinates)
-        self.k = int(12.27 + np.random.randn(1) + 19.77)
+        self.k = int(12.27 * np.random.randn(1) + 19.77)
 
 
 class Person(Contact_Vertex):
     def __init__(self, id, coordinates):
         super().__init__(id, coordinates)
         self.status = "S"
+        self.asymptomatic = random.uniform(0, 1) <= 0.25
+        self.is_quarantined = False
 
     def becomes_infected(self, time):
         self.infection_time = time
@@ -51,6 +54,10 @@ class Person(Contact_Vertex):
 
     def recovers(self):
         self.status = "R"
+
+    def quarantines(self):
+        if not self.asymptomatic:
+            self.is_quarantined = True
 
     def is_infected(self):
         return self.status == "I"
