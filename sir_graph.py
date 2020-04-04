@@ -8,6 +8,11 @@ import sys
 
 class SIR_Graph(Contact_Graph):
     def __init__(self, n, p, p_initial=None, recovery_time=14, t=None, a=0, b=1):
+        already_generated = False
+        if isinstance(n, str):
+            self.read_from_file(n)
+            already_generated = True
+            n = self.size
         self.p = p
         if p_initial is not None:
             self.p_initial = p_initial
@@ -24,12 +29,20 @@ class SIR_Graph(Contact_Graph):
         self.susceptible = set()
         self.infected = set()
         self.recovered = set()
-
-        super().__init__(n, t, a, b)
+        if already_generated:
+            people = [Person(vertex.id, (0, 0)) for vertex in self.vertices]
+            for vertex in self.vertices:
+                person = people[vertex.id]
+                for neighbor in vertex.neighbors:
+                    contact = people[neighbor.id]
+                    person.add_neighbor(contact)
+                self.susceptible.add(person)
+            self.vertices = {person for person in self.susceptible}
+        else:
+            super().__init__(n, t, a, b)
         while self.number_infected == 0:
             for person in self.vertices:
-                p = random.uniform(0, 1)
-                if p <= self.p_initial:
+                if random.uniform(0, 1) <= self.p_initial:
                     person.becomes_infected(self.current_time)
                     self.infected.add(person)
                     self.susceptible.remove(person)
@@ -45,8 +58,7 @@ class SIR_Graph(Contact_Graph):
         for _ in range(2):
             coordinates.append(random.uniform(self.a, self.b))
         person = Person(id, coordinates)
-        p = random.uniform(0, 1)
-        if p <= self.p_initial:
+        if random.uniform(0, 1) <= self.p_initial:
             person.becomes_infected(self.current_time)
             self.infected.add(person)
             self.number_infected += 1
@@ -64,7 +76,7 @@ class SIR_Graph(Contact_Graph):
             for contact in person.neighbors:
                 if self.transmission(person, contact):
                     infected_this_round.add(contact)
-            if self.current_time - person.infection_time >= 5:
+            if person.is_symptomatic(self.current_time):
                 person.quarantines()
 
         for contact in infected_this_round:
@@ -91,8 +103,7 @@ class SIR_Graph(Contact_Graph):
             return False
         else:
             if B.is_susceptible():
-                p = random.uniform(0, 1)
-                return p <= self.p
+                return random.uniform(0, 1) <= self.p
             else:
                 return False
 
@@ -122,18 +133,26 @@ def growth_rate(number_of_new_cases, recovery_time=14):
     return total / length
 
 
-def infection_rate(target_growth_rate, n=10 ** 3, recovery_time=14, threshold=0.000001):
+def infection_rate(
+    target_growth_rate, threshold, n=10 ** 3, recovery_time=14, input_file=None
+):
     actual_growth_rate = 0
     lower, upper = 0, 1
+    if input_file is None:
+        G = SIR_Graph(n=n, p=1)
+        G.write_to_file("test.txt")
     while (
         abs(actual_growth_rate - target_growth_rate) > threshold
         and upper - lower > threshold
     ):
         # print(lower, upper, actual_growth_rate)
         p = (upper + lower) / 2
-        G = SIR_Graph(n=n, p=p)
-        G.simulation(recovery_time)
-        actual_growth_rate = growth_rate(G.number_of_new_cases)
+        if input_file:
+            H = SIR_Graph(input_file, p)
+        else:
+            H = SIR_Graph("test.txt", p)
+        H.simulation(recovery_time)
+        actual_growth_rate = growth_rate(H.number_of_new_cases)
         if actual_growth_rate > target_growth_rate:
             upper = p
         else:
@@ -148,9 +167,14 @@ def main():
         n = int(sys.argv[1])
     target_growth_rate = 1.1
     p = 0
-    for _ in range(10):
-        p += infection_rate(target_growth_rate, n=n)
-    p = p / 10
+    threshold = 0.001
+    G = SIR_Graph(n=n, p=1)
+    G.write_to_file("graph_1.txt")
+    for _ in range(1):
+        p += infection_rate(
+            target_growth_rate, input_file="graph_1.txt", threshold=threshold
+        )
+    p = p / 1
     print(f"Average infection rate: {p:0.05f}")
 
 
