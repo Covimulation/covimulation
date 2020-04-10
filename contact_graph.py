@@ -18,7 +18,6 @@ class Contact_Graph:
             self.b = b
             self.people = set()
             if t is None:
-                print(n)
                 self.t = int(math.sqrt(n / math.log(n)))
             else:
                 self.t = t

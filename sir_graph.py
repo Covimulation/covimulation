@@ -3,7 +3,6 @@
 import random
 from person import Person
 from contact_graph import Contact_Graph
-import copy
 import sys
 from contact_distribution import world_pdf
 
@@ -20,7 +19,7 @@ class SIR_Graph(Contact_Graph):
         t=None,
         a=0,
         b=1,
-        mechanisms=None,
+        mechanisms=set(),
         quarantine_probability=0,
         contact_threshold=0,
     ):
@@ -45,6 +44,7 @@ class SIR_Graph(Contact_Graph):
         self.scheduled_quarantine = "scheduled quarantine" in mechanisms
         self.symptomatic_quarantine = "symptomatic quarantine" in mechanisms
         self.high_contact_targeting = "high-contact targeting" in mechanisms
+
         self.current_time = 0
 
         self.number_suspectible = n
@@ -115,29 +115,18 @@ class SIR_Graph(Contact_Graph):
         if A.is_quarantined or B.is_quarantined:
             return False
         else:
-            if self.high_contact_targeting:
-                if A.is_high_contact(self.contact_threshold)
             if B.is_susceptible():
-                if self.high_contact_targeting and B.is_high_contact(self.contact_threshold):
-                    return random.uniform(0, 1) <= random.uniform(0, 0.5) * self.p
                 return random.uniform(0, 1) <= self.p
             else:
                 return False
 
-    def simulation(self, num_rounds, output=False):
-        if output:
-            print(
-                f"{'Round':^5} {'Number Susceptible': ^20} {'Number Infected': ^20} {'Number Recovered': ^20}"
-            )
-            print(
-                f"{self.current_time: ^5} {self.number_suspectible: ^20} {self.number_infected: ^20} {self.number_recovered: ^20}"
-            )
-        for _ in range(num_rounds):
-            self.round()
-            if output:
-                print(
-                    f"{self.current_time: ^5} {self.number_suspectible: ^20} {self.number_infected: ^20} {self.number_recovered: ^20}"
-                )
+    def simulation(self, num_rounds=0):
+        if num_rounds:
+            for _ in range(num_rounds):
+                self.round()
+        else:
+            while self.infected:
+                self.round()
 
 
 def growth_rate(number_of_new_cases, recovery_time=14):
@@ -155,35 +144,40 @@ def infection_rate(
     threshold,
     contact_distribution,
     n=10 ** 3,
+    number_of_rounds=None,
     recovery_time=14,
     input_file=None,
 ):
     actual_growth_rate = 0
     lower, upper = 0, 1
     if input_file is None:
+        input_file = "test.txt"
         G = SIR_Graph(n=n, p=1, contact_distribution=contact_distribution)
-        G.write_to_file("test.txt")
-    while (
-        abs(actual_growth_rate - target_growth_rate) > threshold
-        and upper - lower > threshold
-    ):
-        # print(lower, upper, actual_growth_rate)
-        p = (upper + lower) / 2
-        if input_file:
+        G.write_to_file(input_file)
+    output_file = f"./output_files/growth_data.csv"
+    with open(output_file, "a") as data_file:
+        while (
+            abs(actual_growth_rate - target_growth_rate) > threshold
+            and upper - lower > threshold
+        ):
+            # print(lower, upper, actual_growth_rate)
+            p = (lower + upper) / 2
             H = SIR_Graph(
-                file_name=input_file, p=p, contact_distribution=contact_distribution
+                file_name=input_file,
+                p=p,
+                contact_distribution=contact_distribution,
+                recovery_time=recovery_time,
             )
-        else:
-            H = SIR_Graph(
-                file_name="test.txt", p=p, contact_distribution=contact_distribution
+            H.simulation(number_of_rounds)
+            data_file.write(
+                f"{n},{p},{','.join([str(x) for x in H.number_of_new_cases])}\n"
             )
-        H.simulation(recovery_time)
-        actual_growth_rate = growth_rate(H.number_of_new_cases)
-        if actual_growth_rate > target_growth_rate:
-            upper = p
-        else:
-            lower = p
-    return p
+            actual_growth_rate = growth_rate(H.number_of_new_cases)
+            if actual_growth_rate > target_growth_rate:
+                upper = p
+            else:
+                lower = p
+        return p
 
 
 def main():
