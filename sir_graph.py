@@ -15,6 +15,7 @@ class SIR_Graph(Contact_Graph):
         n=0,
         file_name=None,
         p_initial=None,
+        initial_infected=1,
         recovery_time=14,
         t=None,
         a=0,
@@ -34,8 +35,11 @@ class SIR_Graph(Contact_Graph):
         self.p = p
         if p_initial is not None:
             self.p_initial = p_initial
+            self.patient_zero = None
         else:
-            self.p_initial = 1 / self.size
+            self.patient_zero = set(
+                random.sample(list(range(self.size)), k=initial_infected)
+            )
 
         self.recovery_time = recovery_time
         self.quarantine_probability = quarantine_probability
@@ -59,7 +63,12 @@ class SIR_Graph(Contact_Graph):
 
         while self.number_infected == 0:
             for person in self.people:
-                if random.uniform(0, 1) <= self.p_initial:
+                infected = False
+                if p_initial is not None:
+                    infected = random.uniform(0, 1) <= self.p_initial
+                else:
+                    infected = person.id in self.patient_zero
+                if infected:
                     person.becomes_infected(self.current_time)
                     self.infected.add(person)
                     self.susceptible.remove(person)
@@ -115,7 +124,7 @@ class SIR_Graph(Contact_Graph):
         if A.is_quarantined or B.is_quarantined:
             return False
         else:
-            if B.is_susceptible():
+            if A.is_contagious(self.current_time) and B.is_susceptible():
                 return random.uniform(0, 1) <= self.p
             else:
                 return False
@@ -155,7 +164,7 @@ def infection_rate(
         G = SIR_Graph(n=n, p=1, contact_distribution=contact_distribution)
         G.write_to_file(input_file)
     output_file = f"./output_files/growth_data.csv"
-    with open(output_file, "a") as data_file:
+    with open(output_file, "a", buffering=1) as data_file:
         while (
             abs(actual_growth_rate - target_growth_rate) > threshold
             and upper - lower > threshold
