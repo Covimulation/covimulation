@@ -3,7 +3,6 @@
 from sir_graph import SIR_Graph, infection_rate
 from contact_distribution import world_pdf
 
-t_p = 0.5
 number_of_tests = 10
 target_growth_rates = [1 + t / 100 for t in range(5, 31)]
 threshold = 0.001

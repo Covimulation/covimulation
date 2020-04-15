@@ -4,6 +4,7 @@ import random
 from person import Person
 from contact_graph import Contact_Graph
 import sys
+import os
 from contact_distribution import world_pdf
 
 
@@ -35,7 +36,6 @@ class SIR_Graph(Contact_Graph):
         self.p = p
         if p_initial is not None:
             self.p_initial = p_initial
-            self.patient_zero = None
         else:
             self.patient_zero = set(
                 random.sample(list(range(self.size)), k=initial_infected)
@@ -164,6 +164,11 @@ def infection_rate(
         G = SIR_Graph(n=n, p=1, contact_distribution=contact_distribution)
         G.write_to_file(input_file)
     output_file = f"./output_files/growth_data.csv"
+    if not os.path.isdir("./output_files"):
+        os.mkdir("./output_files")
+    if not os.path.exists(output_file):
+        with open(output_file, "w") as data_file:
+            data_file.write("n,p,days\n")
     with open(output_file, "a", buffering=1) as data_file:
         while (
             abs(actual_growth_rate - target_growth_rate) > threshold
