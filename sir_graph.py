@@ -6,6 +6,7 @@ from contact_graph import Contact_Graph
 import sys
 import os
 from contact_distribution import world_pdf
+from multiprocessing import Process
 
 
 class SIR_Graph(Contact_Graph):
@@ -139,11 +140,12 @@ class SIR_Graph(Contact_Graph):
 
 
 def growth_rate(number_of_new_cases, recovery_time=14):
-    length = min(recovery_time, len(number_of_new_cases) - 1)
+    length = 0
     total = 0
-    for i in range(1, length):
+    for i in range(len(number_of_new_cases)):
         prev, curr = number_of_new_cases[i - 1], number_of_new_cases[i]
         if prev != 0:
+            length += 1
             total += curr / prev
     return total / length
 
@@ -156,6 +158,7 @@ def infection_rate(
     number_of_rounds=None,
     recovery_time=14,
     input_file=None,
+    output_file=None,
 ):
     actual_growth_rate = 0
     lower, upper = 0, 1
@@ -163,13 +166,10 @@ def infection_rate(
         input_file = "test.txt"
         G = SIR_Graph(n=n, p=1, contact_distribution=contact_distribution)
         G.write_to_file(input_file)
-    output_file = f"./output_files/growth_data.csv"
-    if not os.path.isdir("./output_files"):
-        os.mkdir("./output_files")
-    if not os.path.exists(output_file):
-        with open(output_file, "w") as data_file:
-            data_file.write("n,p,days\n")
-    with open(output_file, "a", buffering=1) as data_file:
+    if output_file is None:
+        output_file = f"./output_files/growth_data.csv"
+    with open(output_file, "w") as data_file:
+        data_file.write("n,p,days\n")
         while (
             abs(actual_growth_rate - target_growth_rate) > threshold
             and upper - lower > threshold
@@ -191,6 +191,7 @@ def infection_rate(
                 upper = p
             else:
                 lower = p
+        data_file.write(f"{n},{p},{target_growth_rate},{actual_growth_rate}\n")
         return p
 
 
