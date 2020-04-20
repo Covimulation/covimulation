@@ -42,17 +42,19 @@ class Contact_Graph:
         self.add_person(v)
 
     def update_contacts(self, u):
-        i = 0
-        while len(u.contacts) < u.number_of_contacts + 1 and i < self.t - min(u.sector):
+        i, s = 0, 0
+        k = u.number_of_contacts + 1
+        while s < k and i < self.t - min(u.sector) + 1:
             s = len(u.contacts)
             new_nodes = self.Grid.adjacent_nodes(u, i)
-            if s + len(new_nodes) > u.number_of_contacts + 1:
+            if s + len(new_nodes) > k:
                 new_nodes = sorted(list(new_nodes), key=lambda v: u.distance(v))
-                new_nodes = set(new_nodes[: u.number_of_contacts - s])
-            u.contacts = u.contacts.union(self.Grid.adjacent_nodes(u, i))
+                new_nodes = set(new_nodes[: k - s])
+            u.contacts = u.contacts.union(new_nodes)
             i += 1
-        if u in u.contacts:
-            u.contacts.remove(u)
+        u.contacts.remove(u)
+        if len(u.contacts) != u.number_of_contacts:
+            print(u.id, u.number_of_contacts, sorted([v.id for v in u.contacts]))
 
     def write_to_file(self, file_name):
         with open(file_name, "w") as text_file:

@@ -13,6 +13,7 @@ def create_graph(graph_size, contact_distribution):
     t = time() - t0
     print(f"Took {t:0.3f}s to create graph of {graph_size} nodes.")
     G.write_to_file(input_file)
+    return
 
 
 def tp_simulation(n, target_growth_rate, threshold, contact_distribution, test_number):
@@ -77,7 +78,7 @@ def main():
     contact_distribution = world_pdf
     n = 10 ** 6
     create_graph(n, contact_distribution)
-    for test_number in range(2):
+    for test_number in range(5):
         q = Process(
             target=tp_simulation,
             args=(n, target_growth_rate, 0.001, contact_distribution, test_number),

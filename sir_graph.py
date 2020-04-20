@@ -195,7 +195,7 @@ def infection_rate(
                 upper = p
             else:
                 lower = p
-        data_file.write(f"{n},{p},{target_growth_rate},{actual_growth_rate}\n")
+        data_file.write(f"{H.size},{p},{target_growth_rate},{actual_growth_rate}\n")
         return p
 
 

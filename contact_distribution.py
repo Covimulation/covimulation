@@ -10,8 +10,7 @@ with open("contact_distribution.csv") as csvfile:
     next(rows)
     for row in rows:
         country = row[0]
-        number_of_participants = int(row[1])
-        sample_size[country] = number_of_participants
+        sample_size[country] = int(row[1])
         data[country] = [float(x) for x in row[2:]]
 
 
@@ -59,8 +58,7 @@ world_pdf = pdf(data["WORLD"])
 
 
 def main():
-    for _ in range(10):
-        print(world_pdf())
+    return 0
 
 
 if __name__ == "__main__":
