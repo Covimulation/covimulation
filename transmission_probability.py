@@ -31,28 +31,67 @@ def tp_simulation(n, target_growth_rate, threshold, contact_distribution, test_n
     # )
 
 
-def main(number_of_tests=3, threshold=0.001):
-    target_growth_rates = [1 + t / 100 for t in range(5, 31)]
+# def sequential_main(number_of_tests=3, threshold=0.001):
+#     target_growth_rates = [1 + t / 100 for t in range(5, 31)]
+#     contact_distribution = world_pdf
+#     graph_sizes = [10 ** i for i in range(3, 5)]
+#     for graph_size in graph_sizes:
+#         create_graph(graph_size, contact_distribution)
+#         for target_growth_rate in target_growth_rates:
+#             for test_number in range(number_of_tests):
+#                 tp_simulation(
+#                     graph_size,
+#                     target_growth_rate,
+#                     threshold,
+#                     contact_distribution,
+#                     test_number,
+#                 )
+
+
+# def main(number_of_tests=3, threshold=0.001):
+#     # target_growth_rates = [1 + t / 100 for t in range(5, 31)]
+#     contact_distribution = world_pdf
+#     graph_sizes = [10 ** i for i in range(3, 5)]
+#     for graph_size in graph_sizes:
+#         p = Process(target=create_graph, args=(graph_size, contact_distribution))
+#         p.start()
+#         p.join()
+#     for graph_size in graph_sizes:
+#         for target_growth_rate in [1.1]:
+#             for test_number in range(number_of_tests):
+#                 q = Process(
+#                     target=tp_simulation,
+#                     args=(
+#                         graph_size,
+#                         target_growth_rate,
+#                         threshold,
+#                         contact_distribution,
+#                         test_number,
+#                     ),
+#                 )
+#                 q.start()
+
+
+def main():
+    target_growth_rate = 1.1
     contact_distribution = world_pdf
-    graph_sizes = [10 ** i for i in range(3, 5)]
-    for graph_size in graph_sizes:
-        p = Process(target=create_graph, args=(graph_size, contact_distribution))
-        p.start()
-        p.join()
-    for graph_size in graph_sizes:
-        for target_growth_rate in target_growth_rates:
-            for test_number in range(number_of_tests):
-                q = Process(
-                    target=tp_simulation,
-                    args=(
-                        graph_size,
-                        target_growth_rate,
-                        threshold,
-                        contact_distribution,
-                        test_number,
-                    ),
-                )
-                q.start()
+    n = 10 ** 6
+    create_graph(n, contact_distribution)
+    for test_number in range(2):
+        q = Process(
+            target=tp_simulation,
+            args=(n, target_growth_rate, 0.001, contact_distribution, test_number),
+        )
+        q.start()
+
+
+# def main():
+#     target_growth_rate = 1.1
+#     contact_distribution = world_pdf
+#     n = 10 ** 6
+#     create_graph(n, contact_distribution)
+#     for test_number in range(2):
+#         tp_simulation(n, target_growth_rate, 0.001, contact_distribution, test_number)
 
 
 if __name__ == "__main__":

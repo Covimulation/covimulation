@@ -38,7 +38,7 @@ class SIR_Graph(Contact_Graph):
         if p_initial is not None:
             self.p_initial = p_initial
         else:
-            self.patient_zero = set(
+            self.index_patients = set(
                 random.sample(list(range(self.size)), k=initial_infected)
             )
 
@@ -68,7 +68,7 @@ class SIR_Graph(Contact_Graph):
                 if p_initial is not None:
                     infected = random.uniform(0, 1) <= self.p_initial
                 else:
-                    infected = person.id in self.patient_zero
+                    infected = person.id in self.index_patients
                 if infected:
                     person.becomes_infected(self.current_time)
                     self.infected.add(person)
@@ -139,11 +139,15 @@ class SIR_Graph(Contact_Graph):
                 self.round()
 
 
+def prev_curr(array):
+    for i in range(1, len(array)):
+        yield array[i - 1], array[i]
+
+
 def growth_rate(number_of_new_cases, recovery_time=14):
     length = 0
     total = 0
-    for i in range(len(number_of_new_cases)):
-        prev, curr = number_of_new_cases[i - 1], number_of_new_cases[i]
+    for prev, curr in prev_curr(number_of_new_cases):
         if prev != 0:
             length += 1
             total += curr / prev
