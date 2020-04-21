@@ -15,7 +15,7 @@ class Person:
         self.status = "S"
         self.symptomatic = random.uniform(0, 1) >= 0.25
         self.is_quarantined = False
-        self.group_number = random.randint(0, 4)
+        self.group_number = random.randint(0, 6)
         self.is_high_contact = False
 
     def add_contact(self, contact):

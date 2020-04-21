@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 
-from sir_graph import SIR_Graph, infection_rate
+from sir_graph import SIR_Graph
 from contact_distribution import world_pdf
 from time import time
 from multiprocessing import Process, Condition
+from collections import defaultdict
+import csv
+import os
 
 
 def create_graph(graph_size, contact_distribution):
@@ -16,83 +19,83 @@ def create_graph(graph_size, contact_distribution):
     return
 
 
-def tp_simulation(n, target_growth_rate, threshold, contact_distribution, test_number):
+def simulation(n, p, contact_distribution, mechanisms=set(), test_number=0):
     input_file = f"./input_files/tp_graph_{n}.txt"
-    # t0 = time()
-    p = infection_rate(
-        target_growth_rate,
-        threshold,
-        contact_distribution,
-        input_file=input_file,
-        output_file=f"./output_files/growth_data_{n}_{target_growth_rate}_{test_number}.csv",
+    output_file = f"./output_files/csvs/growth_data_{n}_{p:0.02f}_{test_number}.csv"
+    G = SIR_Graph(
+        p=p,
+        contact_distribution=contact_distribution,
+        file_name=input_file,
+        mechanisms=mechanisms,
     )
-    # t = time() - t0
-    # print(
-    #     f"Took {t:0.3f}s to determine T_p of {p:0.3f} for target growth rate of {target_growth_rate:0.2f} on {n} nodes."
-    # )
+    G.simulation()
+    with open(output_file, "w") as text_file:
+        growth_string = ",".join([str(k) for k in G.number_of_new_cases])
+        text_file.write(f"{G.size},{p},{growth_string}\n")
 
 
-# def sequential_main(number_of_tests=3, threshold=0.001):
-#     target_growth_rates = [1 + t / 100 for t in range(5, 31)]
-#     contact_distribution = world_pdf
-#     graph_sizes = [10 ** i for i in range(3, 5)]
-#     for graph_size in graph_sizes:
-#         create_graph(graph_size, contact_distribution)
-#         for target_growth_rate in target_growth_rates:
-#             for test_number in range(number_of_tests):
-#                 tp_simulation(
-#                     graph_size,
-#                     target_growth_rate,
-#                     threshold,
-#                     contact_distribution,
-#                     test_number,
-#                 )
+def merge_csvs(n, p_values, number_of_tests=1):
+    output_file = f"./output_files/csvs/growth_data_{n}.csv"
+    with open(output_file, "w") as output_csv:
+        days_string = ",".join([f"day {i}" for i in range(1, 2000)])
+        output_csv.write(f"n,p,{days_string}\n")
+        for p in p_values:
+            for i in range(number_of_tests):
+                input_file = f"./output_files/csvs/growth_data_{n}_{p:0.02f}_{i}.csv"
+                with open(input_file, "r") as input_csv:
+                    for line in input_csv:
+                        output_csv.write(line)
+                os.remove(input_file)
 
 
-# def main(number_of_tests=3, threshold=0.001):
-#     # target_growth_rates = [1 + t / 100 for t in range(5, 31)]
-#     contact_distribution = world_pdf
-#     graph_sizes = [10 ** i for i in range(3, 5)]
-#     for graph_size in graph_sizes:
-#         p = Process(target=create_graph, args=(graph_size, contact_distribution))
-#         p.start()
-#         p.join()
-#     for graph_size in graph_sizes:
-#         for target_growth_rate in [1.1]:
-#             for test_number in range(number_of_tests):
-#                 q = Process(
-#                     target=tp_simulation,
-#                     args=(
-#                         graph_size,
-#                         target_growth_rate,
-#                         threshold,
-#                         contact_distribution,
-#                         test_number,
-#                     ),
-#                 )
-#                 q.start()
+def add_arrays(A, B):
+    if len(A) > len(B):
+        return [A[i] + B[i] for i in range(len(B))] + A[len(B) :]
+    else:
+        return [A[i] + B[i] for i in range(len(A))] + B[len(A) :]
+
+
+def average_csvs(n):
+    input_file = f"./output_files/csvs/growth_data_{n}.csv"
+    output_file = f"./output_files/csvs/average_growth_data_{n}.csv"
+    growth_rate = defaultdict(list)
+    counts = defaultdict(int)
+    with open(input_file, "r") as input_csv:
+        reader = csv.reader(input_csv)
+        next(reader)
+        for row in reader:
+            n = int(row[0])
+            p = float(row[1])
+            data = [int(x) for x in row[2:]]
+            growth_rate[p] = add_arrays(growth_rate[p], data)
+            counts[p] += 1
+    with open(output_file, "w") as output_csv:
+        days_string = ",".join([f"day {i}" for i in range(1, 2000)])
+        output_csv.write(f"n,p,{days_string}\n")
+        for p in growth_rate:
+            growth_rate_string = ",".join([str(x / counts[p]) for x in growth_rate[p]])
+            output_csv.write(f"{n},{p},{growth_rate_string}\n")
 
 
 def main():
-    target_growth_rate = 1.1
     contact_distribution = world_pdf
     n = 10 ** 6
+    p_values = [0.01 * i for i in range(1, 51)]
     create_graph(n, contact_distribution)
-    for test_number in range(5):
-        q = Process(
-            target=tp_simulation,
-            args=(n, target_growth_rate, 0.001, contact_distribution, test_number),
-        )
-        q.start()
-
-
-# def main():
-#     target_growth_rate = 1.1
-#     contact_distribution = world_pdf
-#     n = 10 ** 6
-#     create_graph(n, contact_distribution)
-#     for test_number in range(2):
-#         tp_simulation(n, target_growth_rate, 0.001, contact_distribution, test_number)
+    number_of_processes = 10
+    number_of_tests = 10
+    for i in range(10):
+        for j in range(number_of_tests):
+            processes = []
+            for p in p_values[number_of_processes * i : number_of_processes * (i + 1)]:
+                args = (n, p, contact_distribution, set(), j)
+                process = Process(target=simulation, args=args)
+                process.start()
+                processes.append(process)
+            for process in processes:
+                process.join()
+    merge_csvs(n, p_values, number_of_tests)
+    average_csvs(n)
 
 
 if __name__ == "__main__":

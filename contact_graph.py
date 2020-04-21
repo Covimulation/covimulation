@@ -44,7 +44,7 @@ class Contact_Graph:
     def update_contacts(self, u):
         i, s = 0, 0
         k = u.number_of_contacts + 1
-        while s < k and i < self.t - min(u.sector) + 1:
+        while s < k:
             s = len(u.contacts)
             new_nodes = self.Grid.adjacent_nodes(u, i)
             if s + len(new_nodes) > k:
@@ -54,7 +54,7 @@ class Contact_Graph:
             i += 1
         u.contacts.remove(u)
         if len(u.contacts) != u.number_of_contacts:
-            print(u.id, u.number_of_contacts, sorted([v.id for v in u.contacts]))
+            print(u.id, u.number_of_contacts, len([v.id for v in u.contacts]))
 
     def write_to_file(self, file_name):
         with open(file_name, "w") as text_file:

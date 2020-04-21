@@ -60,7 +60,7 @@ class SIR_Graph(Contact_Graph):
         self.infected = set()
         self.recovered = set()
 
-        self.groups = [set() for _ in range(5)]
+        self.groups = [set() for _ in range(7)]
 
         while self.number_infected == 0:
             for person in self.people:
@@ -84,7 +84,7 @@ class SIR_Graph(Contact_Graph):
 
     def round(self):
         if self.scheduled_quarantine:
-            group_number = self.time % 5
+            group_number = self.current_time % 7
             for person in self.groups[group_number]:
                 person.quarantines()
             for person in self.groups[group_number - 1]:
@@ -149,8 +149,10 @@ def growth_rate(number_of_new_cases, recovery_time=14):
     total = 0
     for prev, curr in prev_curr(number_of_new_cases):
         if prev != 0:
-            length += 1
-            total += curr / prev
+            rate = curr / prev
+            if 1 <= rate <= 1.5:
+                length += 1
+                total += curr / prev
     return total / length
 
 
