@@ -4,7 +4,7 @@ mechanism_1 = "random quarantine"
 mechanism_2 = "symptomatic quarantine"
 mechanism_4 = "scheduled quarantine"
 
-Mechanisms = {
+Mechanisms = [
     (),
     (mechanism_1,),
     (mechanism_2,),
@@ -12,7 +12,7 @@ Mechanisms = {
     (mechanism_1, mechanism_4),
     (mechanism_2, mechanism_4),
     (mechanism_1, mechanism_2, mechanism_4),
-}
+]
 
 
 def model_string(mechanisms):

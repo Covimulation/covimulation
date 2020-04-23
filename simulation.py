@@ -39,24 +39,29 @@ def simulation(n, p, contact_distribution, mechanisms=set(), test_number=0):
 def main():
     contact_distribution = world_pdf
     if len(sys.argv) == 1:
-        n = 10 ** 3
+        n = 10 ** 6
     else:
         n = int(sys.argv[1])
-    p_values = [0.01 * i for i in range(1, 51)]
+    p_values = [0.01, 0.02, 0.03, 0.04, 0.05]
+    # p_values = [0.01 * i for i in range(1, 51)]
     create_graph(n, contact_distribution)
     number_of_processes = 10
     number_of_tests = 10
+    args = [
+        (n, p, contact_distribution, mechanisms, j)
+        for p in p_values
+        for mechanisms in Mechanisms
+        for j in range(number_of_tests)
+    ]
+    for i in range(len(args) // number_of_processes):
+        processes = []
+        for arg in args[i * number_of_processes : (i + 1) * number_of_processes]:
+            process = Process(target=simulation, args=arg)
+            processes.append(process)
+            process.start()
+        for process in processes:
+            process.join()
     for mechanisms in Mechanisms:
-        for i in range(10):
-            for j in range(number_of_tests):
-                processes = []
-                for p in p_values[number_of_processes * i : number_of_processes * (i + 1)]:
-                    args = (n, p, contact_distribution, mechanisms, j)
-                    process = Process(target=simulation, args=args)
-                    processes.append(process)
-                    process.start()
-                for process in processes:
-                    process.join()
         csv_helper(n, p_values, mechanisms, number_of_tests)
 
 
