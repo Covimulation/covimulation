@@ -45,10 +45,11 @@ def simulation(n, p, contact_distribution, mechanisms=set(), test_number=0):
 def main():
     contact_distribution = world_pdf
     if len(sys.argv) == 1:
-        n = 10 ** 3
+        print("Invalid commandline arguments.")
+        n = int(input("Please input the number of nodes.\n"))
     else:
         n = int(sys.argv[1])
-    p_values = [0.01, 0.02, 0.03, 0.04, 0.05]
+    p_values = [0.1, 0.2, 0.3]
     # p_values = [0.01 * i for i in range(1, 51)]
     create_graph(n, contact_distribution)
     if not os.path.isdir(os.path.join(os.getcwd(), "output_files", "csvs", "")):

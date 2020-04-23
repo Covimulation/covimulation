@@ -5,6 +5,7 @@ import numpy as np
 import csv
 from mechanisms import Mechanisms, model_string, model_label
 import os
+import sys
 
 
 def growth_rate(data):
@@ -60,7 +61,9 @@ def plots(n, plot_type):
     plots = dict()
     for mechanisms in Mechanisms:
         model = model_string(mechanisms)
-        input_file = f"./output_files/csvs/average_growth_data_{n}_{model}.csv"
+        input_file = os.path.join(
+            os.getcwd(), "output_files", "csvs", f"average_growth_data_{n}_{model}.csv"
+        )
         with open(input_file, "r") as file:
             rows = csv.reader(file)
             next(rows)
@@ -72,15 +75,23 @@ def plots(n, plot_type):
                 if p not in plots:
                     plots[p] = default_plot(n, p, ylabel)
                 add_to_plot(plots[p], data, label)
-    if not os.path.isdir("./output_files/plots"):
-        os.mkdir("./output_files/plots")
+    if not os.path.isdir(os.path.join(os.getcwd(), "output_files", "plots", "")):
+        os.mkdir(os.path.join(os.getcwd(), "output_files", "plots", ""))
     for p, plot in plots.items():
         plot.legend(loc="upper right")
         fig = plot.get_figure()
-        fig.savefig(f"./output_files/plots/{plot_type}_{p}.png")
+        file_name = os.path.join(
+            os.getcwd(), "output_files", "plots", f"{plot_type}_{p}.png"
+        )
+        fig.savefig(file_name)
 
 
-def main(n=1000000):
+def main():
+    if len(sys.argv) == 1:
+        print("Invalid commandline arguments.")
+        n = int(input("Please input the number of nodes.\n"))
+    else:
+        n = int(sys.argv[1])
     plot_types = ["new", "growth", "total"]
     for plot_type in plot_types:
         plots(n, plot_type)
