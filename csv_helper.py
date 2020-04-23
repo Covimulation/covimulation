@@ -8,13 +8,18 @@ import csv
 
 def merge_csvs(n, p_values, mechanisms, number_of_tests):
     model = model_string(mechanisms)
-    output_file = f"./output_files/csvs/growth_data_{n}_{model}.csv"
+    output_file = os.path.join(
+        os.getcwd(), "output_files", "csvs", f"growth_data_{n}_{model}.csv"
+    )
     with open(output_file, "w") as output_csv:
         output_csv.write(f"n,p,days\n")
         for p in p_values:
             for i in range(number_of_tests):
-                input_file = (
-                    f"./output_files/csvs/growth_data_{n}_{p:0.02f}_{model}_{i}.csv"
+                input_file = os.path.join(
+                    os.getcwd(),
+                    "output_files",
+                    "csvs",
+                    f"growth_data_{n}_{p:0.02f}_{model}_{i}.csv",
                 )
                 with open(input_file, "r") as input_csv:
                     for line in input_csv:
@@ -31,8 +36,12 @@ def add_arrays(A, B):
 
 def average_csvs(n, mechanisms):
     model = model_string(mechanisms)
-    input_file = f"./output_files/csvs/growth_data_{n}_{model}.csv"
-    output_file = f"./output_files/csvs/average_growth_data_{n}_{model}.csv"
+    input_file = os.path.join(
+        os.getcwd(), "output_files", "csvs", f"growth_data_{n}_{model}.csv"
+    )
+    output_file = os.path.join(
+        os.getcwd(), "output_files", "csvs", f"average_growth_data_{n}_{model}.csv"
+    )
     growth_rate = defaultdict(list)
     counts = defaultdict(int)
     with open(input_file, "r") as input_csv:
