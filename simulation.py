@@ -7,6 +7,7 @@ from multiprocessing import Process
 from mechanisms import Mechanisms, model_string
 from csv_helper import csv_helper
 import os
+import shutil
 import sys
 
 
@@ -54,7 +55,7 @@ def main():
     else:
         n = int(sys.argv[1])
         number_of_tests = int(sys.argv[2])
-        p_values = [float(p) for p in sys.argv[3:]]
+        p_values = {float(p) for p in sys.argv[3:]}
     # p_values = [0.01 * i for i in range(1, 51)]
     create_graph(n, contact_distribution)
     if not os.path.isdir(os.path.join(os.getcwd(), "output_files", "csvs", "")):
@@ -65,7 +66,15 @@ def main():
         for p in p_values
         for mechanisms in Mechanisms
         for j in range(number_of_tests)
+        if p not in {0, 1}
     ]
+    for p in {0, 1}:
+        if p in p_values:
+            args += [
+                (n, p, contact_distribution, mechanisms, 0)
+                for p in p_values
+                for mechanisms in Mechanisms
+            ]
     for i in range(len(args) // number_of_processes + 1):
         processes = []
         for arg in args[i * number_of_processes : (i + 1) * number_of_processes]:
@@ -74,6 +83,24 @@ def main():
             process.start()
         for process in processes:
             process.join()
+    for p in {0, 1}:
+        if p in p_values:
+            for mechanisms in Mechanisms:
+                model = model_string(mechanisms)
+                input_file = os.path.join(
+                    os.getcwd(),
+                    "output_files",
+                    "csvs",
+                    f"growth_data_{n}_{p:0.02f}_{model}_0.csv",
+                )
+                for i in range(1, number_of_tests):
+                    output_file = os.path.join(
+                        os.getcwd(),
+                        "output_files",
+                        "csvs",
+                        f"growth_data_{n}_{p:0.02f}_{model}_{i}.csv",
+                    )
+                    shutil.copyfile(input_file, output_file)
     for mechanisms in Mechanisms:
         csv_helper(n, p_values, mechanisms, number_of_tests)
 
