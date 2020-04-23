@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import csv
 from mechanisms import Mechanisms, model_string, model_label
-from collections import defaultdict
+import os
 
 
 def growth_rate(data):
@@ -72,6 +72,8 @@ def plots(n, plot_type):
                 if p not in plots:
                     plots[p] = default_plot(n, p, ylabel)
                 add_to_plot(plots[p], data, label)
+    if not os.path.isdir("./output_files/plots"):
+        os.mkdir("./output_files/plots")
     for p, plot in plots.items():
         plot.legend(loc="upper right")
         fig = plot.get_figure()
