@@ -127,3 +127,17 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Input/Output Directories
+/input_files
+/output_files
+
+# Compressed Archives
+*.zip
+*.rar
+*.7z
+
+# Input/Output Files
+*.txt
+*.csv
+*.png
