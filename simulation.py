@@ -44,25 +44,29 @@ def simulation(n, p, contact_distribution, mechanisms=set(), test_number=0):
 
 def main():
     contact_distribution = world_pdf
-    if len(sys.argv) == 1:
+    if len(sys.argv) < 4:
         print("Invalid commandline arguments.")
         n = int(input("Please input the number of nodes.\n"))
+        number_of_tests = int(input("Please input the number of tests.\n"))
+        p_values = [
+            float(p) for p in input("Please input space-separated p-values\n").split(" ")
+        ]
     else:
         n = int(sys.argv[1])
-    p_values = [0.1, 0.2, 0.3]
+        number_of_tests = int(sys.argv[2])
+        p_values = [float(p) for p in sys.argv[3:]]
     # p_values = [0.01 * i for i in range(1, 51)]
     create_graph(n, contact_distribution)
     if not os.path.isdir(os.path.join(os.getcwd(), "output_files", "csvs", "")):
         os.makedirs(os.path.join(os.getcwd(), "output_files", "csvs", ""))
     number_of_processes = 10
-    number_of_tests = 10
     args = [
         (n, p, contact_distribution, mechanisms, j)
         for p in p_values
         for mechanisms in Mechanisms
         for j in range(number_of_tests)
     ]
-    for i in range(len(args) // number_of_processes):
+    for i in range(len(args) // number_of_processes + 1):
         processes = []
         for arg in args[i * number_of_processes : (i + 1) * number_of_processes]:
             process = Process(target=simulation, args=arg)
