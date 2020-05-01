@@ -56,6 +56,16 @@ nl_pdf = pdf(data["NL"])
 pl_pdf = pdf(data["PL"])
 world_pdf = pdf(data["WORLD"])
 
+be_pdf.__name__ = "be_pdf"
+de_pdf.__name__ = "de_pdf"
+fi_pdf.__name__ = "fi_pdf"
+gb_pdf.__name__ = "gb_pdf"
+it_pdf.__name__ = "it_pdf"
+lu_pdf.__name__ = "lu_pdf"
+nl_pdf.__name__ = "nl_pdf"
+pl_pdf.__name__ = "pl_pdf"
+world_pdf.__name__ = "world_pdf"
+
 
 def main():
     return 0

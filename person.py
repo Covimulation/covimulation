@@ -17,6 +17,7 @@ class Person:
         self.is_quarantined = False
         self.group_number = random.randint(0, 6)
         self.is_high_contact = False
+        self.infection_time = None
 
     def add_contact(self, contact):
         self.contacts.add(contact)

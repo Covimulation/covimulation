@@ -47,6 +47,8 @@ class SIR_Graph(Contact_Graph):
         self.contact_threshold = contact_threshold
         self.random_quarantine = "random quarantine" in mechanisms
         self.scheduled_quarantine = "scheduled quarantine" in mechanisms
+        self.sq_start_time = 14chrom
+        self.sq_started = False
         self.symptomatic_quarantine = "symptomatic quarantine" in mechanisms
         self.high_contact_targeting = "high-contact targeting" in mechanisms
 
@@ -75,20 +77,23 @@ class SIR_Graph(Contact_Graph):
                     self.susceptible.remove(person)
                     self.number_infected += 1
                     self.number_suspectible -= 1
-                self.groups[person.group_number].add(person)
-        if self.random_quarantine:
-            for person in self.people:
+        for person in self.people:
+            if self.random_quarantine:
                 if random.uniform(0, 1) <= self.quarantine_probability:
                     person.quarantines()
+            if self.scheduled_quarantine:
+                self.groups[person.group_number].add(person)
         self.number_of_new_cases = [self.number_infected]
 
     def round(self):
-        if self.scheduled_quarantine:
+        if self.scheduled_quarantine and self.current_time == self.sq_start_time:
+            self.start_scheduled_quarantine()
+        if self.scheduled_quarantine and self.sq_started:
             group_number = self.current_time % 7
             for person in self.groups[group_number]:
-                person.quarantines()
-            for person in self.groups[group_number - 1]:
                 person.unquarantines()
+            for person in self.groups[group_number - 1]:
+                person.quarantines()
         infected_this_round = set()
         recovers_this_round = set()
         for person in self.infected:
@@ -121,7 +126,6 @@ class SIR_Graph(Contact_Graph):
         self.number_of_new_cases.append(number_of_new_cases)
 
     def transmission(self, A, B):
-
         if A.is_quarantined or B.is_quarantined:
             return False
         else:
@@ -138,88 +142,14 @@ class SIR_Graph(Contact_Graph):
             while self.infected:
                 self.round()
 
-
-def prev_curr(array):
-    for i in range(1, len(array)):
-        yield array[i - 1], array[i]
-
-
-def growth_rate(number_of_new_cases, recovery_time=14):
-    length = 0
-    total = 0
-    for prev, curr in prev_curr(number_of_new_cases):
-        if prev != 0:
-            rate = curr / prev
-            if 1 <= rate <= 1.5:
-                length += 1
-                total += curr / prev
-    return total / length
-
-
-def infection_rate(
-    target_growth_rate,
-    threshold,
-    contact_distribution,
-    n=10 ** 3,
-    number_of_rounds=None,
-    recovery_time=14,
-    input_file=None,
-    output_file=None,
-):
-    actual_growth_rate = 0
-    lower, upper = 0, 1
-    if input_file is None:
-        input_file = "test.txt"
-        G = SIR_Graph(n=n, p=1, contact_distribution=contact_distribution)
-        G.write_to_file(input_file)
-    if output_file is None:
-        output_file = f"./output_files/growth_data.csv"
-    with open(output_file, "w") as data_file:
-        data_file.write("n,p,days\n")
-        while (
-            abs(actual_growth_rate - target_growth_rate) > threshold
-            and upper - lower > threshold
-        ):
-            # print(lower, upper, actual_growth_rate)
-            p = (lower + upper) / 2
-            H = SIR_Graph(
-                file_name=input_file,
-                p=p,
-                contact_distribution=contact_distribution,
-                recovery_time=recovery_time,
-            )
-            H.simulation(number_of_rounds)
-            data_file.write(
-                f"{n},{p},{','.join([str(x) for x in H.number_of_new_cases])}\n"
-            )
-            actual_growth_rate = growth_rate(H.number_of_new_cases)
-            if actual_growth_rate > target_growth_rate:
-                upper = p
-            else:
-                lower = p
-        data_file.write(f"{H.size},{p},{target_growth_rate},{actual_growth_rate}\n")
-        return p
+    def start_scheduled_quarantine(self):
+        for person in self.people:
+            person.quarantines()
+        self.sq_started = True
 
 
 def main():
-    if len(sys.argv) == 1:
-        n = 10 ** 3
-    else:
-        n = int(sys.argv[1])
-    target_growth_rate = 1.1
-    p = 0
-    threshold = 0.001
-    G = SIR_Graph(n=n, p=1, contact_distribution=world_pdf)
-    G.write_to_file("graph_1.txt")
-    for _ in range(1):
-        p += infection_rate(
-            target_growth_rate,
-            input_file="graph_1.txt",
-            contact_distribution=world_pdf,
-            threshold=threshold,
-        )
-    p = p / 1
-    print(f"Average infection rate: {p:0.05f}")
+    return 0
 
 
 if __name__ == "__main__":
