@@ -4,7 +4,7 @@ import random
 
 
 class Person:
-    def __init__(self, id, coordinates, contact_distribution):
+    def __init__(self, id, coordinates, contact_distribution, number_of_groups=None):
         self.id = id
         self.coordinates = coordinates
         self.contacts = set()
@@ -15,7 +15,8 @@ class Person:
         self.status = "S"
         self.symptomatic = random.uniform(0, 1) >= 0.25
         self.is_quarantined = False
-        self.group_number = random.randint(0, 6)
+        if number_of_groups:
+            self.group_number = random.randint(0, number_of_groups - 1)
         self.is_high_contact = False
         self.infection_time = None
 

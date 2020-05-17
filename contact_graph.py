@@ -8,7 +8,17 @@ from contact_distribution import world_pdf
 
 
 class Contact_Graph:
-    def __init__(self, contact_distribution, n=0, file_name=None, t=None, a=0, b=1):
+    def __init__(
+        self,
+        contact_distribution,
+        n=0,
+        file_name=None,
+        t=None,
+        a=0,
+        b=1,
+        number_of_groups=None,
+    ):
+        self.number_of_groups = number_of_groups
         if file_name:
             self.read_from_file(file_name)
         else:
@@ -38,7 +48,7 @@ class Contact_Graph:
         coordinates = []
         for _ in range(2):
             coordinates.append(random.uniform(self.a, self.b))
-        v = Person(id, coordinates, self.contact_distribution)
+        v = Person(id, coordinates, self.contact_distribution, self.number_of_groups)
         self.add_person(v)
 
     def update_contacts(self, u):
@@ -72,7 +82,9 @@ class Contact_Graph:
             self.size = int(line[0])
             self.a = float(line[1])
             self.b = float(line[2])
-            people_array = [Person(id, (0, 0), None) for id in range(self.size)]
+            people_array = [
+                Person(id, (0, 0), None, self.number_of_groups) for id in range(self.size)
+            ]
             for line in text_file:
                 data = line.split(" ")
                 id = int(data[0])
