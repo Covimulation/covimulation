@@ -12,20 +12,20 @@ from multiprocessing import Process
 class SIR_Graph(Contact_Graph):
     def __init__(
         self,
-        p,
+        T_p,
         contact_distribution,
         n=0,
         file_name=None,
-        p_initial=None,
+        Tp_initial=None,
         initial_infected=1,
         recovery_time=14,
         t=None,
         a=0,
         b=1,
         mechanism=None,
-        quarantine_probability=0,
-        number_of_groups=1,
-        contact_threshold=0,
+        quarantine_probability=None,
+        number_of_groups=None,
+        schedule=None,
     ):
         super().__init__(
             contact_distribution=contact_distribution,
@@ -36,9 +36,9 @@ class SIR_Graph(Contact_Graph):
             b=b,
             number_of_groups=number_of_groups,
         )
-        self.p = p
-        if p_initial is not None:
-            self.p_initial = p_initial
+        self.T_p = T_p
+        if Tp_initial is not None:
+            self.Tp_initial = Tp_initial
         else:
             self.index_patients = set(
                 random.sample(list(range(self.size)), k=initial_infected)
@@ -46,7 +46,6 @@ class SIR_Graph(Contact_Graph):
 
         self.recovery_time = recovery_time
         self.quarantine_probability = quarantine_probability
-        self.contact_threshold = contact_threshold
         self.random_quarantine = mechanism == "random quarantine"
         self.scheduled_quarantine = mechanism == "scheduled quarantine"
         self.symptomatic_quarantine = mechanism in {
@@ -72,8 +71,8 @@ class SIR_Graph(Contact_Graph):
         while self.number_infected == 0:
             for person in self.people:
                 infected = False
-                if p_initial is not None:
-                    infected = random.uniform(0, 1) <= self.p_initial
+                if Tp_initial is not None:
+                    infected = random.uniform(0, 1) <= self.Tp_initial
                 else:
                     infected = person.id in self.index_patients
                 if infected:
@@ -89,32 +88,52 @@ class SIR_Graph(Contact_Graph):
                     person.quarantines()
 
         if self.scheduled_quarantine:
+            self.schedule = schedule
+            self.cycle_length = len(schedule)
+            group_counts = [0 for _ in range(self.number_of_groups)]
             for person in self.people:
                 self.groups[person.group_number].add(person)
+                if person.is_infected():
+                    group_counts[person.group_number] += 1
                 person.quarantines()
-
+            for group, group_count in enumerate(group_counts):
+                if group_count == 0:
+                    new_index_patient = random.choice(list(self.groups[group]))
+                    new_index_patient.becomes_infected(self.current_time)
         self.number_of_new_cases = [self.number_infected]
+
+    def scheduled_group_unquarantines(self):
+        schedule_day = self.current_time % self.cycle_length
+        group_number = self.schedule[schedule_day]
+        if group_number is not None:
+            curr_group = self.groups[group_number]
+            for person in curr_group:
+                person.unquarantines()
+
+    def scheduled_group_quarantines(self):
+        schedule_day = self.current_time % self.cycle_length
+        group_number = self.schedule[schedule_day]
+        if group_number is not None:
+            curr_group = self.groups[group_number]
+            for person in curr_group:
+                person.quarantines()
 
     def round(self):
         if self.scheduled_quarantine:
-            group_number = self.current_time % self.number_of_groups
-            for person in self.groups[group_number]:
-                person.unquarantines()
-                # print(f"\t{person.group_number}")
-            for person in self.groups[group_number - 1]:
-                person.quarantines()
-                # print(f"\t{person.group_number}")
+            self.scheduled_group_unquarantines()
+
         infected_this_round = set()
         recovers_this_round = set()
         for person in self.infected:
-            if self.current_time - person.infection_time >= self.recovery_time:
-                recovers_this_round.add(person)
-            for contact in person.contacts:
-                if self.transmission(person, contact):
-                    infected_this_round.add(contact)
             if self.symptomatic_quarantine:
                 if person.is_symptomatic(self.current_time):
                     person.quarantines()
+            if self.current_time - person.infection_time > self.recovery_time:
+                recovers_this_round.add(person)
+            if not person.is_quarantined:
+                for contact in person.contacts:
+                    if self.transmission(person, contact):
+                        infected_this_round.add(contact)
 
         for contact in infected_this_round:
             self.infected.add(contact)
@@ -135,12 +154,15 @@ class SIR_Graph(Contact_Graph):
         number_of_new_cases = len(infected_this_round)
         self.number_of_new_cases.append(number_of_new_cases)
 
+        if self.scheduled_quarantine:
+            self.scheduled_group_unquarantines()
+
     def transmission(self, A, B):
         if A.is_quarantined or B.is_quarantined:
             return False
         else:
             if A.is_contagious(self.current_time) and B.is_susceptible():
-                return random.uniform(0, 1) <= self.p
+                return random.uniform(0, 1) <= self.T_p
             else:
                 return False
 

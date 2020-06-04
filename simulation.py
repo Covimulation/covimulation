@@ -25,7 +25,9 @@ def create_graph(n, contact_distribution):
     G.write_to_file(output_graph)
 
 
-def simulation(n, contact_distribution, p, mechanism, q, num_grps, test_number):
+def simulation(
+    n, contact_distribution, p, T_p, mechanism, q, num_grps, schedule, test_number
+):
     cwd = os.getcwd()
     pdf = contact_distribution.__name__
     input_file = os.path.join(cwd, "input_files", f"tp_graph_{n}_{pdf}.txt")
@@ -35,7 +37,7 @@ def simulation(n, contact_distribution, p, mechanism, q, num_grps, test_number):
         cwd,
         "output_files",
         "csvs",
-        f"growth_data_{n}_{p}_{q}_{model}_{num_grps}_{test_number}_{pdf}.csv",
+        f"growth_data_{n}_{T_p}_{q}_{model}_{num_grps}_{test_number}_{pdf}.csv",
     )
     G = SIR_Graph(
         p=p,
@@ -48,46 +50,57 @@ def simulation(n, contact_distribution, p, mechanism, q, num_grps, test_number):
     G.simulation()
     with open(output_file, "w") as text_file:
         growth_string = ",".join([str(k) for k in G.number_of_new_cases])
-        text_file.write(f"{G.size},{pdf},{label},{p},{q},{num_grps},{growth_string}\n")
+        text_file.write(f"{G.size},{pdf},{label},{T_p},{q},{num_grps},{growth_string}\n")
 
 
-def arguments(n, pdfs, p_values, mechanisms, q_values, group_sizes, num_tests):
+def schedule(g, t, d):
+    arr = []
+    for i in range(g):
+        for _ in range(t):
+            arr.append(i)
+    for _ in range(d):
+        arr.append(None)
+    return arr
+
+
+def arguments(n, pdfs, Tp_values, mechanisms, q_values, group_sizes, num_tests):
     args = set()
-    for pdf, p, mechanism, q, k, i in product(
-        pdfs, p_values, mechanisms, q_values, group_sizes, range(num_tests)
+    for pdf, T_p, mechanism, q, k, i in product(
+        pdfs, Tp_values, mechanisms, q_values, group_sizes, range(num_tests)
     ):
         if mechanism == "random quarantine":
-            arg = (n, pdf, p, mechanism, q, None, i)
+            arg = (n, pdf, T_p, mechanism, q, None, i)
         elif mechanism == "scheduled quarantine":
-            arg = (n, pdf, p, mechanism, None, k, i)
+            arg = (n, pdf, T_p, mechanism, None, k, i)
         else:
-            arg = (n, pdf, p, mechanism, None, None, i)
+            arg = (n, pdf, T_p, mechanism, None, None, i)
         args.add(arg)
     args = list(args)
 
     return sorted(args, key=lambda p: (p[0], p[1].__name__, p[2], p[6]))
 
 
-def seq_main():
+def sequential_main():
     n = 10 ** 6
     number_of_tests = 10
     # p_values = [0.025 * i for i in range(1, 41)]
-    p_values = [0.01, 0.1, 0.2, 0.5]
+    Tp_values = [0.01, 0.1, 0.2, 0.5]
     q_values = [0.1 * i for i in range(1, 10)]
     group_sizes = range(2, 8)
     pdfs = [world_pdf]
-    num_tests = 10
     for pdf in pdfs:
         create_graph(n, pdf)
     if not os.path.isdir(os.path.join(os.getcwd(), "output_files", "csvs", "")):
         os.makedirs(os.path.join(os.getcwd(), "output_files", "csvs", ""))
-    args = arguments(n, pdfs, p_values, mechanisms, q_values, group_sizes, num_tests)
+    args = arguments(
+        n, pdfs, Tp_values, mechanisms, q_values, group_sizes, number_of_tests
+    )
     for arg in args:
         simulation(*arg)
     csv_helper()
 
 
-def main():
+def parallel_main():
     # n = int(input("Please input the number of nodes.\n"))
     # number_of_tests = int(input("Please input the number of tests.\n"))
     # p_values = [
@@ -96,10 +109,10 @@ def main():
     # q_values = [
     #     float(q) for q in input("Please input space-separated q-values\n").split(" ")
     # ]
-    n = 10 ** 6
+    n = 5 * 10 ** 4
     number_of_tests = 10
     # p_values = [0.025 * i for i in range(1, 41)]
-    p_values = [0.01, 0.1, 0.2, 0.5]
+    Tp_values = [0.025 * i for i in range(21)]
     q_values = [0.1 * i for i in range(1, 10)]
     group_sizes = range(2, 8)
     pdfs = [world_pdf]
@@ -108,8 +121,8 @@ def main():
         create_graph(n, pdf)
     if not os.path.isdir(os.path.join(os.getcwd(), "output_files", "csvs", "")):
         os.makedirs(os.path.join(os.getcwd(), "output_files", "csvs", ""))
-    number_of_processes = 14
-    args = arguments(n, pdfs, p_values, mechanisms, q_values, group_sizes, num_tests)
+    number_of_processes = 100
+    args = arguments(n, pdfs, Tp_values, mechanisms, q_values, group_sizes, num_tests,)
     for i in range(len(args) // number_of_processes + 1):
         processes = []
         for arg in args[i * number_of_processes : (i + 1) * number_of_processes]:
@@ -119,6 +132,14 @@ def main():
         for process in processes:
             process.join()
     csv_helper()
+
+
+def main():
+    if len(sys.argv) != 1:
+        if sys.argv[1] == "s":
+            sequential_main()
+    else:
+        parallel_main()
 
 
 if __name__ == "__main__":

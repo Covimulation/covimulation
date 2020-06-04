@@ -43,10 +43,10 @@ class Person:
         self.is_quarantined = False
 
     def is_symptomatic(self, time):
-        return self.symptomatic and time - self.infection_time > 5
+        return self.symptomatic and time - self.infection_time >= 5
 
     def is_contagious(self, time):
-        return self.is_infected() and time - self.infection_time > 2
+        return self.is_infected() and time - self.infection_time >= 3
 
     def is_infected(self):
         return self.status == "I"

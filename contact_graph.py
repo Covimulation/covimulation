@@ -5,6 +5,7 @@ import math
 from grid import Grid
 from person import Person
 from contact_distribution import world_pdf
+from alias_sampler import vose_alias_method_sampler, sample_without_replacement
 
 
 class Contact_Graph:
@@ -17,6 +18,7 @@ class Contact_Graph:
         a=0,
         b=1,
         number_of_groups=None,
+        p=1,
     ):
         self.number_of_groups = number_of_groups
         if file_name:
@@ -26,7 +28,9 @@ class Contact_Graph:
             self.contact_distribution = contact_distribution
             self.a = a
             self.b = b
+            self.p = p
             self.people = set()
+            self.weights = dict()
             if t is None:
                 self.t = int(math.sqrt(n / math.log(n)))
             else:
@@ -34,6 +38,9 @@ class Contact_Graph:
             self.Grid = Grid(self.t, a)
             for i in range(n):
                 self.create_person(i)
+            self.degree_distribution = vose_alias_method_sampler(
+                self.weights.values(), self.weights.keys()
+            )
             for u in self.people:
                 self.update_contacts(u)
             for u in self.people:
@@ -49,20 +56,35 @@ class Contact_Graph:
         for _ in range(2):
             coordinates.append(random.uniform(self.a, self.b))
         v = Person(id, coordinates, self.contact_distribution, self.number_of_groups)
+        self.weights[v] = v.number_of_contacts
         self.add_person(v)
 
     def update_contacts(self, u):
+        number_of_close_neighbors = len(
+            [random.uniform(0, 1) <= self.p for _ in range(u.number_of_contacts)]
+        )
+        number_of_random_neighbors = u.number_of_contacts - number_of_close_neighbors
         i, s = 0, 0
+        nearest_neighbors = []
         k = u.number_of_contacts + 1
         while s < k:
-            s = len(u.contacts)
+            s = len(nearest_neighbors)
             new_nodes = self.Grid.adjacent_nodes(u, i)
             if s + len(new_nodes) > k:
                 new_nodes = sorted(list(new_nodes), key=lambda v: u.distance(v))
-                new_nodes = set(new_nodes[: k - s])
-            u.contacts = u.contacts.union(new_nodes)
+                new_nodes = new_nodes[: k - s]
+            nearest_neighbors += sorted(new_nodes, key=lambda v: u.distance(v))
             i += 1
-        u.contacts.remove(u)
+        del nearest_neighbors[0]
+        nearest_neighbors = set(nearest_neighbors[:number_of_close_neighbors])
+        random_neighbors = set(
+            sample_without_replacement(
+                number_of_random_neighbors,
+                self.degree_distribution,
+                skip=nearest_neighbors,
+            )
+        )
+        u.contacts = u.contacts.union(nearest_neighbors).union(random_neighbors)
         if len(u.contacts) != u.number_of_contacts:
             print(u.id, u.number_of_contacts, len([v.id for v in u.contacts]))
 
