@@ -13,7 +13,7 @@ class SIR_Graph(Contact_Graph):
     def __init__(
         self,
         T_p,
-        contact_distribution,
+        contact_distribution=None,
         n=0,
         file_name=None,
         Tp_initial=None,

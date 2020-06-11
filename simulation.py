@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from sir_graph import SIR_Graph
+from contact_graph import Contact_Graph
 from contact_distribution import world_pdf
 from time import time
 from multiprocessing import Process
@@ -12,14 +13,14 @@ import sys
 from itertools import product
 
 
-def create_graph(n, contact_distribution):
+def create_graph(n, contact_distribution, p):
     cwd = os.getcwd()
     pdf = contact_distribution.__name__
     if not os.path.isdir(os.path.join(cwd, "input_files", "")):
         os.mkdir(os.path.join(cwd, "input_files", ""))
-    output_graph = os.path.join(cwd, "input_files", f"tp_graph_{n}_{pdf}.txt")
+    output_graph = os.path.join(cwd, "input_files", f"tp_graph_{n}_{pdf}_{p}.txt")
     t0 = time()
-    G = SIR_Graph(n=n, p=1, contact_distribution=contact_distribution)
+    G = Contact_Graph(contact_distribution, n, p=p)
     t = time() - t0
     print(f"Took {t:0.3f}s to create graph of {n} nodes.")
     G.write_to_file(output_graph)
@@ -30,27 +31,33 @@ def simulation(
 ):
     cwd = os.getcwd()
     pdf = contact_distribution.__name__
-    input_file = os.path.join(cwd, "input_files", f"tp_graph_{n}_{pdf}.txt")
+    input_file = os.path.join(cwd, "input_files", f"tp_graph_{n}_{pdf}_{p}.txt")
     model = model_string(mechanism)
     label = model_label(mechanism)
+    if schedule:
+        schedule_string = " ".join([str(x) for x in schedule])
+    else:
+        schedule_string = "None"
     output_file = os.path.join(
         cwd,
         "output_files",
         "csvs",
-        f"growth_data_{n}_{T_p}_{q}_{model}_{num_grps}_{test_number}_{pdf}.csv",
+        f"growth_data_{n}_{pdf}_{p}_{model}_{T_p}_{q}_{num_grps}_{schedule_string}_{test_number}.csv",
     )
     G = SIR_Graph(
-        p=p,
-        contact_distribution=contact_distribution,
+        T_p=T_p,
         file_name=input_file,
         mechanism=mechanism,
         quarantine_probability=q,
         number_of_groups=num_grps,
+        schedule=schedule,
     )
     G.simulation()
     with open(output_file, "w") as text_file:
         growth_string = ",".join([str(k) for k in G.number_of_new_cases])
-        text_file.write(f"{G.size},{pdf},{label},{T_p},{q},{num_grps},{growth_string}\n")
+        text_file.write(
+            f"{G.size},{pdf},{p},{label},{T_p},{q},{num_grps},{schedule_string},{growth_string}\n"
+        )
 
 
 def schedule(g, t, d):
@@ -63,66 +70,95 @@ def schedule(g, t, d):
     return arr
 
 
-def arguments(n, pdfs, Tp_values, mechanisms, q_values, group_sizes, num_tests):
+def arguments(n, pdfs, p_values, Tp_values, mechanisms, q_values, Schedules, num_tests):
     args = set()
-    for pdf, T_p, mechanism, q, k, i in product(
-        pdfs, Tp_values, mechanisms, q_values, group_sizes, range(num_tests)
+    for pdf, p, T_p, mechanism, q, Schedule, i in product(
+        pdfs, p_values, Tp_values, mechanisms, q_values, Schedules, range(num_tests),
     ):
         if mechanism == "random quarantine":
-            arg = (n, pdf, T_p, mechanism, q, None, i)
+            arg = (n, pdf, p, T_p, mechanism, q, None, None, i)
         elif mechanism == "scheduled quarantine":
-            arg = (n, pdf, T_p, mechanism, None, k, i)
+            k, schedule = Schedule
+            arg = (n, pdf, p, T_p, mechanism, None, k, tuple(schedule), i)
         else:
-            arg = (n, pdf, T_p, mechanism, None, None, i)
+            arg = (n, pdf, p, T_p, mechanism, None, None, None, i)
         args.add(arg)
     args = list(args)
 
-    return sorted(args, key=lambda p: (p[0], p[1].__name__, p[2], p[6]))
+    return sorted(args, key=lambda p: (p[0], p[1].__name__, p[2], p[3], p[8]))
 
 
 def sequential_main():
-    n = 10 ** 6
+    n = 5 * 10 ** 4
     number_of_tests = 10
     # p_values = [0.025 * i for i in range(1, 41)]
     Tp_values = [0.01, 0.1, 0.2, 0.5]
+    # p_values = [0.8, 0.85, 0.9, 0.95, 1]
+    p_values = [1]
     q_values = [0.1 * i for i in range(1, 10)]
-    group_sizes = range(2, 8)
     pdfs = [world_pdf]
+    schedules = [
+        (tup[0], schedule(*tup))
+        for tup in [
+            (1, 4, 3),
+            (1, 3, 4),
+            (2, 3, 3),
+            (2, 2, 3),
+            (2, 3, 2),
+            (3, 3, 0),
+            (3, 3, 1),
+            (4, 1, 0),
+        ]
+    ]
     for pdf in pdfs:
-        create_graph(n, pdf)
+        for p in p_values:
+            create_graph(n, pdf, p)
     if not os.path.isdir(os.path.join(os.getcwd(), "output_files", "csvs", "")):
         os.makedirs(os.path.join(os.getcwd(), "output_files", "csvs", ""))
     args = arguments(
-        n, pdfs, Tp_values, mechanisms, q_values, group_sizes, number_of_tests
+        n, pdfs, p_values, Tp_values, mechanisms, q_values, schedules, number_of_tests,
     )
+    finished = 0
     for arg in args:
+        print(arg)
         simulation(*arg)
+        finished += 1
+        print(f"{finished} / {len(args)} ({finished / len(args) * 100 : 0.3f}%) finished")
     csv_helper()
 
 
 def parallel_main():
-    # n = int(input("Please input the number of nodes.\n"))
-    # number_of_tests = int(input("Please input the number of tests.\n"))
-    # p_values = [
-    #     float(p) for p in input("Please input space-separated p-values\n").split(" ")
-    # ]
-    # q_values = [
-    #     float(q) for q in input("Please input space-separated q-values\n").split(" ")
-    # ]
+    number_of_processes = 2
     n = 5 * 10 ** 4
     number_of_tests = 10
     # p_values = [0.025 * i for i in range(1, 41)]
-    Tp_values = [0.025 * i for i in range(21)]
+    Tp_values = [0.01, 0.1, 0.2, 0.5]
+    # p_values = [0.8, 0.85, 0.9, 0.95, 1]
+    p_values = [1]
     q_values = [0.1 * i for i in range(1, 10)]
-    group_sizes = range(2, 8)
     pdfs = [world_pdf]
-    num_tests = 10
+    schedules = [
+        (tup[0], schedule(*tup))
+        for tup in [
+            (1, 4, 3),
+            (1, 3, 4),
+            (2, 3, 3),
+            (2, 2, 3),
+            (2, 3, 2),
+            (3, 3, 0),
+            (3, 3, 1),
+            (4, 1, 0),
+        ]
+    ]
     for pdf in pdfs:
-        create_graph(n, pdf)
+        for p in p_values:
+            create_graph(n, pdf, p)
     if not os.path.isdir(os.path.join(os.getcwd(), "output_files", "csvs", "")):
         os.makedirs(os.path.join(os.getcwd(), "output_files", "csvs", ""))
-    number_of_processes = 100
-    args = arguments(n, pdfs, Tp_values, mechanisms, q_values, group_sizes, num_tests,)
+    args = arguments(
+        n, pdfs, p_values, Tp_values, mechanisms, q_values, schedules, number_of_tests,
+    )
+    finished = 0
     for i in range(len(args) // number_of_processes + 1):
         processes = []
         for arg in args[i * number_of_processes : (i + 1) * number_of_processes]:
@@ -131,6 +167,8 @@ def parallel_main():
             process.start()
         for process in processes:
             process.join()
+        finished += number_of_processes
+        print(f"{finished} / {len(args)} ({finished / len(args) * 100 : 0.3f}%) finished")
     csv_helper()
 
 

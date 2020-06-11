@@ -13,6 +13,7 @@ class Contact_Graph:
         self,
         contact_distribution,
         n=0,
+        *,
         file_name=None,
         t=None,
         a=0,
