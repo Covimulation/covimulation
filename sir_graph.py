@@ -100,6 +100,7 @@ class SIR_Graph(Contact_Graph):
                 if group_count == 0:
                     new_index_patient = random.choice(list(self.groups[group]))
                     new_index_patient.becomes_infected(self.current_time)
+                    self.number_infected += 1
         self.number_of_new_cases = [self.number_infected]
 
     def scheduled_group_unquarantines(self):
