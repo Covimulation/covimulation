@@ -11,6 +11,7 @@ import os
 import shutil
 import sys
 from itertools import product
+from plot_helper import plot_helper
 
 
 def create_graph(n, contact_distribution, p):
@@ -170,6 +171,7 @@ def parallel_main():
         finished += number_of_processes
         print(f"{finished} / {len(args)} ({finished / len(args) * 100 : 0.3f}%) finished")
     csv_helper()
+    plot_helper()
 
 
 def main():

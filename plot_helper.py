@@ -266,13 +266,16 @@ def overlaid_plots(n, plot_type, x_lim, y_lim):
         plt.close(fig)
 
 
-def main():
-    n = 50000
+def plot_helper():
     plot_types = ["new", "growth", "total"]
     x_lim, y_lim = defaultdict(int), defaultdict(int)
     for plot_type in plot_types:
         overlaid_plots(n, plot_type, x_lim, y_lim)
         individual_plots(n, plot_type, x_lim, y_lim)
+
+
+def main():
+    plot_helper()
 
 
 if __name__ == "__main__":
