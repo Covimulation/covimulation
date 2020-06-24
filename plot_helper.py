@@ -92,7 +92,7 @@ def legend_sort(label):
         return 3
 
 
-def individual_plots(n, plot_type, x_lim, y_lim):
+def individual_plots(plot_type, x_lim, y_lim):
     ylabel, data_func = label_func(plot_type)
     if not os.path.isdir(os.path.join(os.getcwd(), "output_files", "plots", "")):
         os.mkdir(os.path.join(os.getcwd(), "output_files", "plots", ""))
@@ -123,22 +123,27 @@ def individual_plots(n, plot_type, x_lim, y_lim):
             t = int(row[8])
             X, Y = data_func([float(x) for x in row[9:]])
             plot = default_plot(n, p, q, ylabel, t, pdf, None, schedule)
-            key = (n, pdf, p, q, T_p, q, k, schedule, plot_type)
+            sched_key = (k, schedule)
+            key = (n, pdf, p, q, T_p, q, sched_key)
             add_to_plot(plot, X, Y, plot_type, model)
             plot.set_xlim(x_lim[(n, p, q, pdf, model)])
             plot.set_ylim(y_lim[(n, p, q, pdf, model)])
             fig = plot.get_figure()
+            if q:
+                q_str = f"{q:0.02f}"
+            else:
+                q_str = None
             file_name = os.path.join(
                 os.getcwd(),
                 "output_files",
                 "plots",
-                f"{n}_{plot_type}_{p:0.02f}_{q:0.02f}_{model}_{pdf}.png",
+                f"{n}_{p:0.2f}_{pdf}_{T_p:0.02f}_{q_str}_{sched_key}_{plot_type}.png",
             )
             fig.savefig(file_name)
             plt.close(fig)
 
 
-def overlaid_plots(n, plot_type, x_lim, y_lim):
+def overlaid_plots(plot_type, x_lim, y_lim):
     ylabel, data_func = label_func(plot_type)
     if not os.path.isdir(os.path.join(os.getcwd(), "output_files", "plots", "")):
         os.mkdir(os.path.join(os.getcwd(), "output_files", "plots", ""))
@@ -270,8 +275,8 @@ def plot_helper():
     plot_types = ["new", "growth", "total"]
     x_lim, y_lim = defaultdict(int), defaultdict(int)
     for plot_type in plot_types:
-        overlaid_plots(n, plot_type, x_lim, y_lim)
-        individual_plots(n, plot_type, x_lim, y_lim)
+        overlaid_plots(plot_type, x_lim, y_lim)
+        # individual_plots(plot_type, x_lim, y_lim)
 
 
 def main():

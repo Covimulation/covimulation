@@ -13,11 +13,12 @@ class SIR_Graph(Contact_Graph):
     def __init__(
         self,
         T_p,
-        contact_distribution=None,
+        contact_distribution,
+        p=1,
         n=0,
         file_name=None,
         Tp_initial=None,
-        initial_infected=1,
+        initial_infected=100,
         recovery_time=14,
         t=None,
         a=0,
@@ -52,7 +53,6 @@ class SIR_Graph(Contact_Graph):
             "symptomatic quarantine",
             "scheduled quarantine",
         }
-
         self.high_contact_targeting = mechanism == "high-contact targeting"
 
         self.current_time = 0
@@ -126,6 +126,14 @@ class SIR_Graph(Contact_Graph):
         infected_this_round = set()
         recovers_this_round = set()
         for person in self.infected:
+            if self.scheduled_quarantine:
+                if (
+                    not person.is_quarantined
+                    and person.group_number
+                    != self.schedule[self.current_time % self.cycle_length]
+                ):
+                    print(f"{person.group_number}: quarantined - {person.is_quarantined}")
+                    input()
             if self.symptomatic_quarantine:
                 if person.is_symptomatic(self.current_time):
                     person.quarantines()
@@ -134,6 +142,9 @@ class SIR_Graph(Contact_Graph):
             if not person.is_quarantined:
                 for contact in person.contacts:
                     if self.transmission(person, contact):
+                        if self.scheduled_quarantine:
+                            if person.group_number != contact.group_number:
+                                print(person.group_number, contact.group_number)
                         infected_this_round.add(contact)
 
         for contact in infected_this_round:
@@ -151,12 +162,12 @@ class SIR_Graph(Contact_Graph):
             self.recovered.add(contact)
             self.number_recovered += 1
 
+        if self.scheduled_quarantine:
+            self.scheduled_group_quarantines()
+
         self.current_time += 1
         number_of_new_cases = len(infected_this_round)
         self.number_of_new_cases.append(number_of_new_cases)
-
-        if self.scheduled_quarantine:
-            self.scheduled_group_unquarantines()
 
     def transmission(self, A, B):
         if A.is_quarantined or B.is_quarantined:

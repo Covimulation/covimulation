@@ -47,11 +47,13 @@ def simulation(
     )
     G = SIR_Graph(
         T_p=T_p,
+        contact_distribution=contact_distribution,
         file_name=input_file,
         mechanism=mechanism,
         quarantine_probability=q,
         number_of_groups=num_grps,
         schedule=schedule,
+        p=p,
     )
     G.simulation()
     with open(output_file, "w") as text_file:
@@ -93,24 +95,27 @@ def sequential_main():
     n = 5 * 10 ** 4
     number_of_tests = 10
     # p_values = [0.025 * i for i in range(1, 41)]
-    Tp_values = [0.01, 0.1, 0.2, 0.5]
+    Tp_values = [0.1, 0.2, 0.3, 0.4, 0.5]
     # p_values = [0.8, 0.85, 0.9, 0.95, 1]
     p_values = [1]
-    q_values = [0.1 * i for i in range(1, 10)]
+    q_values = [0.1]
     pdfs = [world_pdf]
-    schedules = [
-        (tup[0], schedule(*tup))
-        for tup in [
-            (1, 4, 3),
-            (1, 3, 4),
-            (2, 3, 3),
-            (2, 2, 3),
-            (2, 3, 2),
-            (3, 3, 0),
-            (3, 3, 1),
-            (4, 1, 0),
-        ]
-    ]
+    # schedules = [
+    #     (tup[0], schedule(*tup))
+    #     for tup in [
+    #         (1, 5, 2),
+    #         (1, 4, 3),
+    #         (1, 3, 4),
+    #         (2, 5, 2),
+    #         (2, 3, 3),
+    #         (2, 2, 3),
+    #         (2, 3, 2),
+    #         (3, 3, 0),
+    #         (3, 3, 1),
+    #         (4, 1, 0),
+    #     ]
+    # ]
+    schedules = [(tup[0], schedule(*tup)) for tup in [(1, 5, 2)]]
     for pdf in pdfs:
         for p in p_values:
             create_graph(n, pdf, p)
@@ -121,11 +126,11 @@ def sequential_main():
     )
     finished = 0
     for arg in args:
-        print(arg)
         simulation(*arg)
         finished += 1
         print(f"{finished} / {len(args)} ({finished / len(args) * 100 : 0.3f}%) finished")
     csv_helper()
+    plot_helper()
 
 
 def parallel_main():
@@ -133,24 +138,27 @@ def parallel_main():
     n = 5 * 10 ** 4
     number_of_tests = 10
     # p_values = [0.025 * i for i in range(1, 41)]
-    Tp_values = [0.01, 0.1, 0.2, 0.5]
+    Tp_values = [0.1, 0.2, 0.3, 0.4, 0.5]
     # p_values = [0.8, 0.85, 0.9, 0.95, 1]
     p_values = [1]
-    q_values = [0.1 * i for i in range(1, 10)]
+    q_values = [0.1]
     pdfs = [world_pdf]
-    schedules = [
-        (tup[0], schedule(*tup))
-        for tup in [
-            (1, 4, 3),
-            (1, 3, 4),
-            (2, 3, 3),
-            (2, 2, 3),
-            (2, 3, 2),
-            (3, 3, 0),
-            (3, 3, 1),
-            (4, 1, 0),
-        ]
-    ]
+    # schedules = [
+    #     (tup[0], schedule(*tup))
+    #     for tup in [
+    #         (1, 5, 2),
+    #         (1, 4, 3),
+    #         (1, 3, 4),
+    #         (2, 5, 2),
+    #         (2, 3, 3),
+    #         (2, 2, 3),
+    #         (2, 3, 2),
+    #         (3, 3, 0),
+    #         (3, 3, 1),
+    #         (4, 1, 0),
+    #     ]
+    # ]
+    schedules = [(tup[0], schedule(*tup)) for tup in [(1, 5, 2)]]
     for pdf in pdfs:
         for p in p_values:
             create_graph(n, pdf, p)
