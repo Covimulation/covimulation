@@ -192,7 +192,7 @@ def overlaid_plots(plot_type, x_lim, y_lim):
             data_key = (n, pdf, p, model, T_p, q, k, schedule)
             data[data_key] = (X, Y)
     q_values.remove(None)
-    sched_keys.remove((None, None))
+    sched_keys.remove((1, None))
     for key in product(n_values, pdfs, p_values, Tp_values, q_values, sched_keys):
         n, pdf, p, T_p, q, sched_key = key
         plots[key] = default_plot(n, T_p, q, ylabel, 10, pdf, "", "")
@@ -242,8 +242,9 @@ def overlaid_plots(plot_type, x_lim, y_lim):
                     label = f"{k} groups - {schedule}"
                     add_to_plot(plots[key], X, Y, plot_type, model, label, alpha=0.7)
 
-    if not os.path.isdir(os.path.join(os.getcwd(), "output_files", "plots", "")):
-        os.mkdir(os.path.join(os.getcwd(), "output_files", "plots", ""))
+    directory = os.path.join(os.getcwd(), "output_files", "plots", plot_type, "")
+    if not os.path.isdir(directory):
+        os.mkdir(directory)
     for key, plot in plots.items():
         n, pdf, p, T_p, q, sched_key = key
         x_lim[key] = plot.get_xlim()
@@ -254,9 +255,7 @@ def overlaid_plots(plot_type, x_lim, y_lim):
             plot.legend(loc="upper right")
         fig = plot.get_figure()
         file_name = os.path.join(
-            os.getcwd(),
-            "output_files",
-            "plots",
+            directory,
             f"{n}_{p:0.2f}_{pdf}_{T_p:0.02f}_{q:0.02f}_{sched_key}_{plot_type}.png",
         )
         handles, labels = plot.get_legend_handles_labels()

@@ -4,6 +4,8 @@ from collections import defaultdict
 
 
 class Grid:
+    __slots__ = ["t", "a", "b", "sector"]
+
     def __init__(self, t, a=0, b=1):
         self.t = t
         self.a = a

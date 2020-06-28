@@ -9,6 +9,20 @@ from alias_sampler import vose_alias_method_sampler, sample_without_replacement
 
 
 class Contact_Graph:
+    __slots__ = [
+        "size",
+        "contact_distribution",
+        "a",
+        "b",
+        "p",
+        "people",
+        "weights",
+        "t",
+        "Grid",
+        "degree_distribution",
+        "number_of_groups",
+    ]
+
     def __init__(
         self,
         contact_distribution,
@@ -18,7 +32,7 @@ class Contact_Graph:
         t=None,
         a=0,
         b=1,
-        number_of_groups=None,
+        number_of_groups=1,
         p=1,
     ):
         self.number_of_groups = number_of_groups

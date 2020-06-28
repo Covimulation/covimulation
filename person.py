@@ -4,7 +4,21 @@ import random
 
 
 class Person:
-    def __init__(self, id, coordinates, contact_distribution, number_of_groups=None):
+    __slots__ = [
+        "id",
+        "coordinates",
+        "contacts",
+        "number_of_contacts",
+        "status",
+        "symptomatic",
+        "is_quarantined",
+        "group_number",
+        "is_high_contact",
+        "infection_time",
+        "sector",
+    ]
+
+    def __init__(self, id, coordinates, contact_distribution, number_of_groups=1):
         self.id = id
         self.coordinates = coordinates
         self.contacts = set()
@@ -15,8 +29,7 @@ class Person:
         self.status = "S"
         self.symptomatic = random.uniform(0, 1) >= 0.25
         self.is_quarantined = False
-        if number_of_groups:
-            self.group_number = random.randint(0, number_of_groups - 1)
+        self.group_number = random.randint(0, number_of_groups - 1)
         self.is_high_contact = False
         self.infection_time = None
 

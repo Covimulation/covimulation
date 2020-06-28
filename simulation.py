@@ -79,12 +79,12 @@ def arguments(n, pdfs, p_values, Tp_values, mechanisms, q_values, Schedules, num
         pdfs, p_values, Tp_values, mechanisms, q_values, Schedules, range(num_tests),
     ):
         if mechanism == "random quarantine":
-            arg = (n, pdf, p, T_p, mechanism, q, None, None, i)
+            arg = (n, pdf, p, T_p, mechanism, q, 1, None, i)
         elif mechanism == "scheduled quarantine":
             k, schedule = Schedule
             arg = (n, pdf, p, T_p, mechanism, None, k, tuple(schedule), i)
         else:
-            arg = (n, pdf, p, T_p, mechanism, None, None, None, i)
+            arg = (n, pdf, p, T_p, mechanism, None, 1, None, i)
         args.add(arg)
     args = list(args)
 
@@ -134,7 +134,7 @@ def sequential_main():
 
 
 def parallel_main():
-    number_of_processes = 2
+    number_of_processes = 8
     n = 5 * 10 ** 4
     number_of_tests = 10
     # p_values = [0.025 * i for i in range(1, 41)]
@@ -169,6 +169,7 @@ def parallel_main():
     )
     finished = 0
     for i in range(len(args) // number_of_processes + 1):
+        print(f"{finished} / {len(args)} ({finished / len(args) * 100 : 0.3f}%) finished")
         processes = []
         for arg in args[i * number_of_processes : (i + 1) * number_of_processes]:
             process = Process(target=simulation, args=arg)
@@ -177,15 +178,13 @@ def parallel_main():
         for process in processes:
             process.join()
         finished += number_of_processes
-        print(f"{finished} / {len(args)} ({finished / len(args) * 100 : 0.3f}%) finished")
     csv_helper()
     plot_helper()
 
 
 def main():
-    if len(sys.argv) != 1:
-        if sys.argv[1] == "s":
-            sequential_main()
+    if len(sys.argv) != 1 and sys.argv[1] == "s":
+        sequential_main()
     else:
         parallel_main()
 

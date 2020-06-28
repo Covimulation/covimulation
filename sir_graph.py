@@ -10,6 +10,29 @@ from multiprocessing import Process
 
 
 class SIR_Graph(Contact_Graph):
+    __slots__ = [
+        "T_p",
+        "Tp_initial",
+        "index_patients",
+        "recovery_time",
+        "quarantine_probability",
+        "random_quarantine",
+        "scheduled_quarantine",
+        "symptomatic_quarantine",
+        "high_contact_targeting",
+        "current_time",
+        "number_suspectible",
+        "number_infected",
+        "number_recovered",
+        "susceptible",
+        "infected",
+        "recovered",
+        "groups",
+        "schedule",
+        "cycle_length",
+        "number_of_new_cases",
+    ]
+
     def __init__(
         self,
         T_p,
@@ -25,7 +48,7 @@ class SIR_Graph(Contact_Graph):
         b=1,
         mechanism=None,
         quarantine_probability=None,
-        number_of_groups=None,
+        number_of_groups=1,
         schedule=None,
     ):
         super().__init__(
