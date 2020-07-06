@@ -134,11 +134,11 @@ def sequential_main():
 
 
 def parallel_main():
-    number_of_processes = 8
+    number_of_processes = 4
     n = 5 * 10 ** 4
-    number_of_tests = 10
+    number_of_tests = 3
     # p_values = [0.025 * i for i in range(1, 41)]
-    Tp_values = [0.1, 0.2, 0.3, 0.4, 0.5]
+    Tp_values = [0.1]
     # p_values = [0.8, 0.85, 0.9, 0.95, 1]
     p_values = [1]
     q_values = [0.1]
@@ -178,8 +178,11 @@ def parallel_main():
         for process in processes:
             process.join()
         finished += number_of_processes
+    print(f"Finished {len(args)} simulations. Generating CSVs.")
     csv_helper()
+    print("Finished CSVs. Generating plots.")
     plot_helper()
+    print("Finished generating plots.")
 
 
 def main():

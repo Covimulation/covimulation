@@ -2,6 +2,7 @@
 
 import csv
 import random
+import matplotlib.pyplot as plt
 
 data = dict()
 sample_size = dict()
@@ -68,6 +69,10 @@ world_pdf.__name__ = "world_pdf"
 
 
 def main():
+    data = [world_pdf() for _ in range(50000)]
+    plt.hist(data, bins=50)
+    plt.xticks(range(0, 50, 5))
+    plt.show()
     return 0
 
 

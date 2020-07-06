@@ -67,7 +67,6 @@ class SIR_Graph(Contact_Graph):
             self.index_patients = set(
                 random.sample(list(range(self.size)), k=initial_infected)
             )
-
         self.recovery_time = recovery_time
         self.quarantine_probability = quarantine_probability
         self.random_quarantine = mechanism == "random quarantine"
@@ -132,7 +131,8 @@ class SIR_Graph(Contact_Graph):
         if group_number is not None:
             curr_group = self.groups[group_number]
             for person in curr_group:
-                person.unquarantines()
+                if not person.is_symptomatic(self.current_time):
+                    person.unquarantines()
 
     def scheduled_group_quarantines(self):
         schedule_day = self.current_time % self.cycle_length
@@ -148,15 +148,8 @@ class SIR_Graph(Contact_Graph):
 
         infected_this_round = set()
         recovers_this_round = set()
+        seen = set()
         for person in self.infected:
-            if self.scheduled_quarantine:
-                if (
-                    not person.is_quarantined
-                    and person.group_number
-                    != self.schedule[self.current_time % self.cycle_length]
-                ):
-                    print(f"{person.group_number}: quarantined - {person.is_quarantined}")
-                    input()
             if self.symptomatic_quarantine:
                 if person.is_symptomatic(self.current_time):
                     person.quarantines()
@@ -164,11 +157,12 @@ class SIR_Graph(Contact_Graph):
                 recovers_this_round.add(person)
             if not person.is_quarantined:
                 for contact in person.contacts:
-                    if self.transmission(person, contact):
-                        if self.scheduled_quarantine:
-                            if person.group_number != contact.group_number:
-                                print(person.group_number, contact.group_number)
-                        infected_this_round.add(contact)
+                    if (contact.id, person.id) in seen:
+                        continue
+                    else:
+                        seen.add((person.id, contact.id))
+                        if self.transmission(person, contact):
+                            infected_this_round.add(contact)
 
         for contact in infected_this_round:
             self.infected.add(contact)

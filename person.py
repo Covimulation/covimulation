@@ -27,7 +27,7 @@ class Person:
         else:
             self.number_of_contacts = 0
         self.status = "S"
-        self.symptomatic = random.uniform(0, 1) >= 0.25
+        self.symptomatic = random.uniform(0, 1) >= 0.35
         self.is_quarantined = False
         self.group_number = random.randint(0, number_of_groups - 1)
         self.is_high_contact = False
@@ -56,7 +56,7 @@ class Person:
         self.is_quarantined = False
 
     def is_symptomatic(self, time):
-        return self.symptomatic and time - self.infection_time >= 5
+        return self.is_infected() and self.symptomatic and time - self.infection_time >= 5
 
     def is_contagious(self, time):
         return self.is_infected() and time - self.infection_time >= 3
