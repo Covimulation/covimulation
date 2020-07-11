@@ -49,7 +49,7 @@ def add_to_plot(plot, X, Y, plot_type, model, label="", alpha=1):
         plot.scatter(X, Y, label=label, alpha=alpha, color=color)
 
 
-def default_plot(n, T_p, q, ylabel, t, pdf, model, schedule):
+def default_plot(n, T_p, q, ylabel, t, pdf, model, schedule, p):
     _, plot = plt.subplots(figsize=(16, 9))
     m_string = ""
     if model == "Random Quarantine":
@@ -59,7 +59,7 @@ def default_plot(n, T_p, q, ylabel, t, pdf, model, schedule):
     plot.set_xlabel("Day")
     plot.set_ylabel(ylabel)
     plot.set_title(
-        f"""{ylabel} with n = {n}, T_p = {T_p:0.2f}
+        f"""{ylabel} with n = {n}, p = {p}, T_p = {T_p:0.2f}
             (Average over {t} Simulations)
             Contact Distribution = {pdf}
             {model}
@@ -195,7 +195,7 @@ def overlaid_plots(plot_type, x_lim, y_lim):
     sched_keys.remove((1, None))
     for key in product(n_values, pdfs, p_values, Tp_values, q_values, sched_keys):
         n, pdf, p, T_p, q, sched_key = key
-        plots[key] = default_plot(n, T_p, q, ylabel, 10, pdf, "", "")
+        plots[key] = default_plot(n, T_p, q, ylabel, 10, pdf, "", "", p)
     for n, pdf, p, model, T_p, q, k, schedule in data:
         X, Y = data[(n, pdf, p, model, T_p, q, k, schedule)]
         if model == "Basic Model":
@@ -247,6 +247,11 @@ def overlaid_plots(plot_type, x_lim, y_lim):
         os.mkdir(directory)
     for key, plot in plots.items():
         n, pdf, p, T_p, q, sched_key = key
+        subdirectory = os.path.join(
+            directory, f"p={p:0.2f}", f"Tp={T_p:0.2f}", f"q={q:0.2f}", ""
+        )
+        if not os.path.isdir(subdirectory):
+            os.makedirs(subdirectory)
         x_lim[key] = plot.get_xlim()
         y_lim[key] = plot.get_ylim()
         if plot_type == "total":
@@ -255,7 +260,7 @@ def overlaid_plots(plot_type, x_lim, y_lim):
             plot.legend(loc="upper right")
         fig = plot.get_figure()
         file_name = os.path.join(
-            directory,
+            subdirectory,
             f"{n}_{p:0.2f}_{pdf}_{T_p:0.02f}_{q:0.02f}_{sched_key}_{plot_type}.png",
         )
         handles, labels = plot.get_legend_handles_labels()

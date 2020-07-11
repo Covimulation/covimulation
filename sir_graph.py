@@ -35,13 +35,14 @@ class SIR_Graph(Contact_Graph):
 
     def __init__(
         self,
+        *,
         T_p,
         contact_distribution,
         p=1,
         n=0,
         file_name=None,
         Tp_initial=None,
-        initial_infected=100,
+        initial_infected=200,
         recovery_time=14,
         t=None,
         a=0,
@@ -155,14 +156,15 @@ class SIR_Graph(Contact_Graph):
                     person.quarantines()
             if self.current_time - person.infection_time > self.recovery_time:
                 recovers_this_round.add(person)
-            if not person.is_quarantined:
-                for contact in person.contacts:
-                    if (contact.id, person.id) in seen:
-                        continue
-                    else:
-                        seen.add((person.id, contact.id))
-                        if self.transmission(person, contact):
-                            infected_this_round.add(contact)
+            if person.is_quarantined:
+                continue
+            for contact in person.contacts:
+                if (contact.id, person.id) in seen:
+                    continue
+                else:
+                    seen.add((person.id, contact.id))
+                    if self.transmission(person, contact):
+                        infected_this_round.add(contact)
 
         for contact in infected_this_round:
             self.infected.add(contact)

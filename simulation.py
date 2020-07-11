@@ -23,7 +23,7 @@ def create_graph(n, contact_distribution, p):
     t0 = time()
     G = Contact_Graph(contact_distribution, n, p=p)
     t = time() - t0
-    print(f"Took {t:0.3f}s to create graph of {n} nodes.")
+    # print(f"Took {t:0.3f}s to create graph of {n} nodes.")
     G.write_to_file(output_graph)
 
 
@@ -92,33 +92,44 @@ def arguments(n, pdfs, p_values, Tp_values, mechanisms, q_values, Schedules, num
 
 
 def sequential_main():
+    number_of_processes = 4
     n = 5 * 10 ** 4
     number_of_tests = 10
     # p_values = [0.025 * i for i in range(1, 41)]
-    Tp_values = [0.1, 0.2, 0.3, 0.4, 0.5]
+    Tp_values = [0.05 * i for i in range(1, 11)]
     # p_values = [0.8, 0.85, 0.9, 0.95, 1]
-    p_values = [1]
-    q_values = [0.1]
+    p_values = [0, 1]
+    q_values = [0.1, 0.2, 0.3, 0.4, 0.5]
     pdfs = [world_pdf]
-    # schedules = [
-    #     (tup[0], schedule(*tup))
-    #     for tup in [
-    #         (1, 5, 2),
-    #         (1, 4, 3),
-    #         (1, 3, 4),
-    #         (2, 5, 2),
-    #         (2, 3, 3),
-    #         (2, 2, 3),
-    #         (2, 3, 2),
-    #         (3, 3, 0),
-    #         (3, 3, 1),
-    #         (4, 1, 0),
-    #     ]
-    # ]
-    schedules = [(tup[0], schedule(*tup)) for tup in [(1, 5, 2)]]
+    schedules = [
+        (tup[0], schedule(*tup))
+        for tup in [
+            (1, 5, 2),
+            (1, 4, 3),
+            (1, 3, 4),
+            (2, 5, 2),
+            (2, 3, 3),
+            (2, 2, 3),
+            (2, 3, 2),
+            (3, 3, 0),
+            (3, 3, 1),
+            (4, 1, 0),
+            (5, 1, 0),
+            (3, 2, 0),
+            (3, 3, 0),
+            (2, 4, 0),
+        ]
+    ]
+    if not os.path.isdir(os.path.join(os.getcwd(), "output_files", "csvs", "")):
+        os.makedirs(os.path.join(os.getcwd(), "output_files", "csvs", ""))
+    args = arguments(
+        n, pdfs, p_values, Tp_values, mechanisms, q_values, schedules, number_of_tests,
+    )
+    print("Generating graphs.")
     for pdf in pdfs:
         for p in p_values:
             create_graph(n, pdf, p)
+    print("Finished generating graphs.")
     if not os.path.isdir(os.path.join(os.getcwd(), "output_files", "csvs", "")):
         os.makedirs(os.path.join(os.getcwd(), "output_files", "csvs", ""))
     args = arguments(
@@ -135,33 +146,40 @@ def sequential_main():
 
 def parallel_main():
     number_of_processes = 4
-    n = 5 * 10 ** 4
-    number_of_tests = 3
+    n = 10 ** 5
+    number_of_tests = 10
     # p_values = [0.025 * i for i in range(1, 41)]
-    Tp_values = [0.1]
+    Tp_values = [0.05 * i for i in range(1, 11)]
     # p_values = [0.8, 0.85, 0.9, 0.95, 1]
-    p_values = [1]
-    q_values = [0.1]
+    p_values = [0, 1]
+    q_values = [1]
     pdfs = [world_pdf]
-    # schedules = [
-    #     (tup[0], schedule(*tup))
-    #     for tup in [
-    #         (1, 5, 2),
-    #         (1, 4, 3),
-    #         (1, 3, 4),
-    #         (2, 5, 2),
-    #         (2, 3, 3),
-    #         (2, 2, 3),
-    #         (2, 3, 2),
-    #         (3, 3, 0),
-    #         (3, 3, 1),
-    #         (4, 1, 0),
-    #     ]
-    # ]
-    schedules = [(tup[0], schedule(*tup)) for tup in [(1, 5, 2)]]
+    schedules = [
+        (tup[0], schedule(*tup))
+        for tup in [
+            (1, 5, 2),
+            (1, 4, 3),
+            (1, 3, 4),
+            (2, 5, 2),
+            (2, 3, 3),
+            (2, 2, 3),
+            (2, 3, 2),
+            (5, 1, 0),
+            (3, 2, 0),
+            (3, 3, 0),
+            (2, 4, 0),
+        ]
+    ]
+    processes = []
+    print("Generating graphs.")
     for pdf in pdfs:
         for p in p_values:
-            create_graph(n, pdf, p)
+            process = Process(target=create_graph, args=(n, pdf, p))
+            processes.append(process)
+            process.start()
+    for process in processes:
+        process.join()
+    print("Finished generating graphs.")
     if not os.path.isdir(os.path.join(os.getcwd(), "output_files", "csvs", "")):
         os.makedirs(os.path.join(os.getcwd(), "output_files", "csvs", ""))
     args = arguments(

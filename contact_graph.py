@@ -75,13 +75,13 @@ class Contact_Graph:
         self.add_person(v)
 
     def update_contacts(self, u):
-        number_of_close_neighbors = len(
-            [random.uniform(0, 1) <= self.p for _ in range(u.number_of_contacts)]
+        number_of_close_neighbors = sum(
+            random.uniform(0, 1) <= self.p for _ in range(u.number_of_contacts)
         )
         number_of_random_neighbors = u.number_of_contacts - number_of_close_neighbors
         i, s = 0, 0
         nearest_neighbors = []
-        k = u.number_of_contacts + 1
+        k = number_of_close_neighbors + 1
         while s < k:
             s = len(nearest_neighbors)
             new_nodes = self.Grid.adjacent_nodes(u, i)
@@ -109,7 +109,8 @@ class Contact_Graph:
             for person in self.people:
                 text_file.write(f"{person.id} ")
                 contacts = [str(contact.id) for contact in person.contacts]
-                text_file.write(f"{' '.join(contacts)} ")
+                if contacts:
+                    text_file.write(f"{' '.join(contacts)} ")
                 coordinates = [str(x) for x in person.coordinates]
                 text_file.write(f"{' '.join(coordinates)}\n")
 

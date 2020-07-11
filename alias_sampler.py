@@ -42,6 +42,7 @@ def vose_alias_method_sampler(weights, keys=None):
     if keys is None:
         return sampler_index
     else:
+        keys = list(keys)
 
         def sampler():
             i = sampler_index()
@@ -93,11 +94,11 @@ def main():
     sample_data = defaultdict(int)
     real_data = {value: weight / total for value, weight in zip(values, weights)}
     test_function = vose_alias_method_sampler(weights, values)
-    for _ in range(10 ** 9):
+    for _ in range(10 ** 6):
         value = test_function()
         sample_data[value] += 1
     for key in sample_data:
-        sample_data[key] /= 10 ** 9
+        sample_data[key] /= 10 ** 6
     for value in values:
         print(abs(real_data[value] - sample_data[value]))
 
