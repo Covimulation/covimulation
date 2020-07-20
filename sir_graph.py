@@ -51,6 +51,7 @@ class SIR_Graph(Contact_Graph):
         quarantine_probability=None,
         number_of_groups=1,
         schedule=None,
+        asymptomatic_rate,
     ):
         super().__init__(
             contact_distribution=contact_distribution,
@@ -60,6 +61,7 @@ class SIR_Graph(Contact_Graph):
             a=a,
             b=b,
             number_of_groups=number_of_groups,
+            asymptomatic_rate=asymptomatic_rate,
         )
         self.T_p = T_p
         if Tp_initial is not None:

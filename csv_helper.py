@@ -18,7 +18,7 @@ def merge_csvs():
     write_header = not os.path.exists(output_file)
     with open(output_file, "a") as output:
         if write_header:
-            output.write("n,pdf,p,model,T_p,q,num_grps,schedule,days\n")
+            output.write("n,pdf,p,model,T_p,q,num_grps,schedule,asymp_rate,days\n")
         writer = csv.writer(output)
         for file in files:
             with open(file, "r") as data:
@@ -60,18 +60,21 @@ def average_csv():
             else:
                 k = None
             schedule = row[7]
-            data = [int(x) for x in row[8:]]
-            key = (n, pdf, p, T_p, model, q, k, schedule)
+            asymp_rate = float(row[8])
+            data = [int(x) for x in row[9:]]
+            key = (n, pdf, p, T_p, model, q, k, schedule, asymp_rate)
             growth_rate[key] = add_arrays(growth_rate[key], data)
             counts[key] += 1
     with open(output_file, "w") as output_csv:
-        output_csv.write("n,pdf,p,model,T_p,q,num_grps,schedule,num_trials,days\n")
+        output_csv.write(
+            "n,pdf,p,model,T_p,q,num_grps,schedule,asymp_rate,num_trials,days\n"
+        )
         for key in growth_rate:
-            n, pdf, p, T_p, model, q, k, schedule = key
+            n, pdf, p, T_p, model, q, k, schedule, asymp_rate, = key
             t = counts[key]
             growth_rate_string = ",".join([str(x / t) for x in growth_rate[key]])
             output_csv.write(
-                f"{n},{pdf},{p},{model},{T_p},{q},{k},{schedule},{t},{growth_rate_string}\n"
+                f"{n},{pdf},{p},{model},{T_p},{q},{k},{schedule},{asymp_rate},{t},{growth_rate_string}\n"
             )
 
 

@@ -21,6 +21,7 @@ class Contact_Graph:
         "Grid",
         "degree_distribution",
         "number_of_groups",
+        "asymptomatic_rate",
     ]
 
     def __init__(
@@ -34,8 +35,10 @@ class Contact_Graph:
         b=1,
         number_of_groups=1,
         p=1,
+        asymptomatic_rate=0,
     ):
         self.number_of_groups = number_of_groups
+        self.asymptomatic_rate = asymptomatic_rate
         if file_name:
             self.read_from_file(file_name)
         else:
@@ -70,7 +73,13 @@ class Contact_Graph:
         coordinates = []
         for _ in range(2):
             coordinates.append(random.uniform(self.a, self.b))
-        v = Person(id, coordinates, self.contact_distribution, self.number_of_groups)
+        v = Person(
+            id,
+            coordinates,
+            self.contact_distribution,
+            self.asymptomatic_rate,
+            self.number_of_groups,
+        )
         self.weights[v] = v.number_of_contacts
         self.add_person(v)
 
@@ -121,7 +130,8 @@ class Contact_Graph:
             self.a = float(line[1])
             self.b = float(line[2])
             people_array = [
-                Person(id, (0, 0), None, self.number_of_groups) for id in range(self.size)
+                Person(id, (0, 0), None, self.asymptomatic_rate, self.number_of_groups)
+                for id in range(self.size)
             ]
             for line in text_file:
                 data = line.split(" ")

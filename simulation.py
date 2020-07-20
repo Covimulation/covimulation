@@ -28,7 +28,17 @@ def create_graph(n, contact_distribution, p):
 
 
 def simulation(
-    n, contact_distribution, p, T_p, mechanism, q, num_grps, schedule, test_number
+    n,
+    contact_distribution,
+    p,
+    T_p,
+    mechanism,
+    q,
+    num_grps,
+    schedule,
+    asymptomatic_rate,
+    initial_infected,
+    test_number,
 ):
     cwd = os.getcwd()
     pdf = contact_distribution.__name__
@@ -43,7 +53,7 @@ def simulation(
         cwd,
         "output_files",
         "csvs",
-        f"growth_data_{n}_{pdf}_{p}_{model}_{T_p}_{q}_{num_grps}_{schedule_string}_{test_number}.csv",
+        f"growth_data_{n}_{pdf}_{p}_{model}_{T_p}_{q}_{num_grps}_{schedule_string}_{asymptomatic_rate}_{initial_infected}_{test_number}.csv",
     )
     G = SIR_Graph(
         T_p=T_p,
@@ -54,12 +64,14 @@ def simulation(
         number_of_groups=num_grps,
         schedule=schedule,
         p=p,
+        asymptomatic_rate=asymptomatic_rate,
+        initial_infected=initial_infected,
     )
     G.simulation()
     with open(output_file, "w") as text_file:
         growth_string = ",".join([str(k) for k in G.number_of_new_cases])
         text_file.write(
-            f"{G.size},{pdf},{p},{label},{T_p},{q},{num_grps},{schedule_string},{growth_string}\n"
+            f"{G.size},{pdf},{p},{label},{T_p},{q},{num_grps},{schedule_string},{G.asymptomatic_rate},{growth_string}\n"
         )
 
 
@@ -73,18 +85,63 @@ def schedule(g, t, d):
     return arr
 
 
-def arguments(n, pdfs, p_values, Tp_values, mechanisms, q_values, Schedules, num_tests):
+def arguments(
+    population_pairs,
+    pdfs,
+    p_values,
+    Tp_values,
+    mechanisms,
+    q_values,
+    Schedules,
+    asymp_rates,
+    num_tests,
+):
     args = set()
-    for pdf, p, T_p, mechanism, q, Schedule, i in product(
-        pdfs, p_values, Tp_values, mechanisms, q_values, Schedules, range(num_tests),
+    for np, pdf, p, T_p, mechanism, q, Schedule, asymp_rate, i in product(
+        population_pairs,
+        pdfs,
+        p_values,
+        Tp_values,
+        mechanisms,
+        q_values,
+        Schedules,
+        asymp_rates,
+        range(num_tests),
     ):
+        n, initial_infected = np[0], int(np[0] * np[1])
         if mechanism == "random quarantine":
-            arg = (n, pdf, p, T_p, mechanism, q, 1, None, i)
+            arg = (n, pdf, p, T_p, mechanism, q, 1, None, 0, initial_infected, i)
         elif mechanism == "scheduled quarantine":
             k, schedule = Schedule
-            arg = (n, pdf, p, T_p, mechanism, None, k, tuple(schedule), i)
+            arg = (
+                n,
+                pdf,
+                p,
+                T_p,
+                mechanism,
+                None,
+                k,
+                tuple(schedule),
+                asymp_rate,
+                initial_infected,
+                i,
+            )
+        elif mechanism == "symptomatic quarantine":
+            arg = (
+                n,
+                pdf,
+                p,
+                T_p,
+                mechanism,
+                None,
+                1,
+                None,
+                asymp_rate,
+                initial_infected,
+                i,
+            )
         else:
-            arg = (n, pdf, p, T_p, mechanism, None, 1, None, i)
+            arg = (n, pdf, p, T_p, mechanism, None, 1, None, 0, initial_infected, i)
         args.add(arg)
     args = list(args)
 
@@ -93,13 +150,16 @@ def arguments(n, pdfs, p_values, Tp_values, mechanisms, q_values, Schedules, num
 
 def sequential_main():
     number_of_processes = 4
-    n = 5 * 10 ** 4
-    number_of_tests = 10
-    # p_values = [0.025 * i for i in range(1, 41)]
-    Tp_values = [0.05 * i for i in range(1, 11)]
-    # p_values = [0.8, 0.85, 0.9, 0.95, 1]
+    population_sizes = [10 ** 4, 5 * 10 ** 4]
+    asymp_rates = [0.25, 0.3, 0.35, 0.4]
+    index_values = [0.001, 0.002, 0.01, 0.02]
+    population_pairs = product(population_sizes, index_values)
+    number_of_tests = 1
+    Tp_values = [0.1]
+    # Tp_values = [0.05 * i for i in range(1, 11)]
     p_values = [0, 1]
-    q_values = [0.1, 0.2, 0.3, 0.4, 0.5]
+    q_values = [0.1]
+    # q_values = [0.1, 0.2, 0.3, 0.4, 0.5]
     pdfs = [world_pdf]
     schedules = [
         (tup[0], schedule(*tup))
@@ -123,36 +183,46 @@ def sequential_main():
     if not os.path.isdir(os.path.join(os.getcwd(), "output_files", "csvs", "")):
         os.makedirs(os.path.join(os.getcwd(), "output_files", "csvs", ""))
     args = arguments(
-        n, pdfs, p_values, Tp_values, mechanisms, q_values, schedules, number_of_tests,
+        population_pairs,
+        pdfs,
+        p_values,
+        Tp_values,
+        mechanisms,
+        q_values,
+        schedules,
+        asymp_rates,
+        number_of_tests,
     )
     print("Generating graphs.")
     for pdf in pdfs:
         for p in p_values:
-            create_graph(n, pdf, p)
+            for n in population_sizes:
+                create_graph(n, pdf, p)
     print("Finished generating graphs.")
     if not os.path.isdir(os.path.join(os.getcwd(), "output_files", "csvs", "")):
         os.makedirs(os.path.join(os.getcwd(), "output_files", "csvs", ""))
-    args = arguments(
-        n, pdfs, p_values, Tp_values, mechanisms, q_values, schedules, number_of_tests,
-    )
     finished = 0
     for arg in args:
+        print(arg)
         simulation(*arg)
         finished += 1
         print(f"{finished} / {len(args)} ({finished / len(args) * 100 : 0.3f}%) finished")
     csv_helper()
-    plot_helper()
+    # plot_helper()
 
 
 def parallel_main():
     number_of_processes = 4
-    n = 10 ** 5
-    number_of_tests = 10
-    # p_values = [0.025 * i for i in range(1, 41)]
-    Tp_values = [0.05 * i for i in range(1, 11)]
-    # p_values = [0.8, 0.85, 0.9, 0.95, 1]
+    population_sizes = [10 ** 4, 5 * 10 ** 4]
+    asymp_rates = [0.25, 0.3, 0.35, 0.4]
+    index_values = [0.001, 0.002, 0.01, 0.02]
+    population_pairs = product(population_sizes, index_values)
+    number_of_tests = 1
+    Tp_values = [0.1]
+    # Tp_values = [0.05 * i for i in range(1, 11)]
     p_values = [0, 1]
-    q_values = [1]
+    q_values = [0.1]
+    # q_values = [0.1, 0.2, 0.3, 0.4, 0.5]
     pdfs = [world_pdf]
     schedules = [
         (tup[0], schedule(*tup))
@@ -164,6 +234,9 @@ def parallel_main():
             (2, 3, 3),
             (2, 2, 3),
             (2, 3, 2),
+            (3, 3, 0),
+            (3, 3, 1),
+            (4, 1, 0),
             (5, 1, 0),
             (3, 2, 0),
             (3, 3, 0),
@@ -174,16 +247,25 @@ def parallel_main():
     print("Generating graphs.")
     for pdf in pdfs:
         for p in p_values:
-            process = Process(target=create_graph, args=(n, pdf, p))
-            processes.append(process)
-            process.start()
+            for n in population_sizes:
+                process = Process(target=create_graph, args=(n, pdf, p))
+                processes.append(process)
+                process.start()
     for process in processes:
         process.join()
     print("Finished generating graphs.")
     if not os.path.isdir(os.path.join(os.getcwd(), "output_files", "csvs", "")):
         os.makedirs(os.path.join(os.getcwd(), "output_files", "csvs", ""))
     args = arguments(
-        n, pdfs, p_values, Tp_values, mechanisms, q_values, schedules, number_of_tests,
+        population_pairs,
+        pdfs,
+        p_values,
+        Tp_values,
+        mechanisms,
+        q_values,
+        schedules,
+        asymp_rates,
+        number_of_tests,
     )
     finished = 0
     for i in range(len(args) // number_of_processes + 1):
@@ -198,9 +280,9 @@ def parallel_main():
         finished += number_of_processes
     print(f"Finished {len(args)} simulations. Generating CSVs.")
     csv_helper()
-    print("Finished CSVs. Generating plots.")
-    plot_helper()
-    print("Finished generating plots.")
+    # print("Finished CSVs. Generating plots.")
+    # plot_helper()
+    # print("Finished generating plots.")
 
 
 def main():
