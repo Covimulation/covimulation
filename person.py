@@ -8,7 +8,7 @@ from matplotlib.pyplot import show, bar
 
 
 def incubation_period(x=1.621, s=0.418):
-    return lambda: lognormal(mean=x, sigma=s)
+    return lognormal(mean=x, sigma=s)
 
 
 class Person:
@@ -24,10 +24,16 @@ class Person:
         "is_high_contact",
         "infection_time",
         "sector",
+        "incubation_period",
     ]
 
     def __init__(
-        self, id, coordinates, contact_distribution, asymptomatic_rate, number_of_groups=1,
+        self,
+        id,
+        coordinates,
+        contact_distribution,
+        asymptomatic_rate,
+        number_of_groups=1,
     ):
         self.id = id
         self.coordinates = coordinates
@@ -75,7 +81,8 @@ class Person:
 
     def is_contagious(self, time):
         return (
-            self.is_infected() and time - self.infection_time >= self.incubation_period - 2
+            self.is_infected()
+            and time - self.infection_time >= self.incubation_period - 2
         )
 
     def is_infected(self):
