@@ -12,6 +12,33 @@ import shutil
 import sys
 from itertools import product
 from plot_helper import plot_helper
+from collections import defaultdict
+
+
+def get_data():
+    graph = defaultdict(set)
+    with open("Kissler_DataS1.csv", "r") as kissler_data:
+        for line in kissler_data:
+            _, u, v, dist = line.split(",")
+            u, v, dist = int(u) - 1, int(v) - 1, int(dist)
+            if dist <= 5:
+                graph[u].add(v)
+                graph[v].add(u)
+    n = max(graph) + 1
+    m = 0
+    max_degree = 0
+    output_file = os.path.join(cwd, "kissler", "kissler_graph.txt")
+    with open(output_file, "w") as output:
+        output.write(f"{n} 0 1\n")
+        for i in range(n):
+            output.write(f"{i} ")
+            contacts = [str(x) for x in sorted(graph[i])]
+            m += len(contacts)
+            max_degree = max(max_degree, len(contacts))
+            if contacts:
+                output.write(f"{' '.join(contacts)} ")
+            output.write("0.0 0.0\n")
+    print(n, m // 2, max_degree)
 
 
 def simulation(
@@ -199,87 +226,8 @@ def sequential_main():
     # plot_helper()
 
 
-def parallel_main():
-    number_of_processes = 4
-    population_sizes = [10 ** 4, 5 * 10 ** 4]
-    asymp_rates = [0.25, 0.3, 0.35, 0.4]
-    index_values = [0.001, 0.002, 0.01, 0.02]
-    population_pairs = product(population_sizes, index_values)
-    number_of_tests = 1
-    Tp_values = [0.1]
-    # Tp_values = [0.05 * i for i in range(1, 11)]
-    p_values = [0, 1]
-    q_values = [0.1]
-    # q_values = [0.1, 0.2, 0.3, 0.4, 0.5]
-    pdfs = [world_pdf]
-    schedules = [
-        (tup[0], schedule(*tup))
-        for tup in [
-            (1, 5, 2),
-            (1, 4, 3),
-            (1, 3, 4),
-            (2, 5, 2),
-            (2, 3, 3),
-            (2, 2, 3),
-            (2, 3, 2),
-            (3, 3, 0),
-            (3, 3, 1),
-            (4, 1, 0),
-            (5, 1, 0),
-            (3, 2, 0),
-            (3, 3, 0),
-            (2, 4, 0),
-        ]
-    ]
-    processes = []
-    print("Generating graphs.")
-    for pdf in pdfs:
-        for p in p_values:
-            for n in population_sizes:
-                process = Process(target=create_graph, args=(n, pdf, p))
-                processes.append(process)
-                process.start()
-    for process in processes:
-        process.join()
-    print("Finished generating graphs.")
-    if not os.path.isdir(os.path.join(os.getcwd(), "output_files", "csvs", "")):
-        os.makedirs(os.path.join(os.getcwd(), "output_files", "csvs", ""))
-    args = arguments(
-        population_pairs,
-        pdfs,
-        p_values,
-        Tp_values,
-        mechanisms,
-        q_values,
-        schedules,
-        asymp_rates,
-        number_of_tests,
-    )
-    finished = 0
-    for i in range(len(args) // number_of_processes + 1):
-        print(
-            f"{finished} / {len(args)} ({finished / len(args) * 100 : 0.3f}%) finished"
-        )
-        processes = []
-        for arg in args[i * number_of_processes : (i + 1) * number_of_processes]:
-            process = Process(target=simulation, args=arg)
-            processes.append(process)
-            process.start()
-        for process in processes:
-            process.join()
-        finished += number_of_processes
-    print(f"Finished {len(args)} simulations. Generating CSVs.")
-    csv_helper()
-    # print("Finished CSVs. Generating plots.")
-    # plot_helper()
-    # print("Finished generating plots.")
-
-
 def main():
-    if len(sys.argv) != 1 and sys.argv[1] == "s":
-        sequential_main()
-    else:
-        parallel_main()
+    get_data()
 
 
 if __name__ == "__main__":
