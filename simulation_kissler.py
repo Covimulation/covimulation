@@ -27,7 +27,11 @@ def get_data():
     n = max(graph) + 1
     m = 0
     max_degree = 0
-    output_file = os.path.join(cwd, "kissler", "kissler_graph.txt")
+    cwd = os.getcwd()
+    output_folder = os.path.join(cwd, "kissler", "")
+    if not os.path.isdir(output_folder):
+        os.mkdir(output_folder)
+    output_file = os.path.join(output_folder, "kissler_graph.txt")
     with open(output_file, "w") as output:
         output.write(f"{n} 0 1\n")
         for i in range(n):
@@ -38,10 +42,11 @@ def get_data():
             if contacts:
                 output.write(f"{' '.join(contacts)} ")
             output.write("0.0 0.0\n")
-    print(n, m // 2, max_degree)
+    # print(n, m // 2, max_degree)
 
 
 def simulation(
+    n,
     contact_distribution,
     p,
     T_p,
@@ -66,7 +71,7 @@ def simulation(
         cwd,
         "kissler",
         "csvs",
-        f"growth_data_{pdf}_{p}_{model}_{T_p}_{q}_{num_grps}_{schedule_string}_{asymptomatic_rate}_{initial_infected}_{test_number}.csv",
+        f"growth_data_{n}_{pdf}_{p}_{model}_{T_p}_{q}_{num_grps}_{schedule_string}_{asymptomatic_rate}_{initial_infected}_{test_number}.csv",
     )
     G = SIR_Graph(
         T_p=T_p,
@@ -162,12 +167,11 @@ def arguments(
 
 
 def sequential_main():
-    number_of_processes = 4
-    population_sizes = [10 ** 4, 5 * 10 ** 4]
-    asymp_rates = [0.25, 0.3, 0.35, 0.4]
-    index_values = [0.001, 0.002, 0.01, 0.02]
+    population_sizes = [469]
+    asymp_rates = [0.4]
+    index_values = [0.003, 0.01, 0.02]
     population_pairs = product(population_sizes, index_values)
-    number_of_tests = 1
+    number_of_tests = 10
     Tp_values = [0.1]
     # Tp_values = [0.05 * i for i in range(1, 11)]
     p_values = [0, 1]
@@ -193,8 +197,8 @@ def sequential_main():
             (2, 4, 0),
         ]
     ]
-    if not os.path.isdir(os.path.join(os.getcwd(), "output_files", "csvs", "")):
-        os.makedirs(os.path.join(os.getcwd(), "output_files", "csvs", ""))
+    if not os.path.isdir(os.path.join(os.getcwd(), "kissler", "csvs", "")):
+        os.makedirs(os.path.join(os.getcwd(), "kissler", "csvs", ""))
     args = arguments(
         population_pairs,
         pdfs,
@@ -206,28 +210,19 @@ def sequential_main():
         asymp_rates,
         number_of_tests,
     )
-    print("Generating graphs.")
-    for pdf in pdfs:
-        for p in p_values:
-            for n in population_sizes:
-                create_graph(n, pdf, p)
-    print("Finished generating graphs.")
-    if not os.path.isdir(os.path.join(os.getcwd(), "output_files", "csvs", "")):
-        os.makedirs(os.path.join(os.getcwd(), "output_files", "csvs", ""))
     finished = 0
     for arg in args:
-        print(arg)
         simulation(*arg)
         finished += 1
         print(
             f"{finished} / {len(args)} ({finished / len(args) * 100 : 0.3f}%) finished"
         )
-    csv_helper()
-    # plot_helper()
+    csv_helper(output_folder="kissler")
 
 
 def main():
     get_data()
+    sequential_main()
 
 
 if __name__ == "__main__":

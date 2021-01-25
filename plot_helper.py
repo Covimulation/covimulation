@@ -12,7 +12,9 @@ import re
 colors = dict()
 i = 0
 for mechanism in mechanisms:
-    colors[model_label(mechanism)] = plt.rcParams["axes.prop_cycle"].by_key()["color"][i]
+    colors[model_label(mechanism)] = plt.rcParams["axes.prop_cycle"].by_key()["color"][
+        i
+    ]
     i += 1
 
 
@@ -92,12 +94,12 @@ def legend_sort(label):
         return 3
 
 
-def individual_plots(plot_type, x_lim, y_lim):
+def individual_plots(plot_type, x_lim, y_lim, output_directory="output_files"):
     ylabel, data_func = label_func(plot_type)
     if not os.path.isdir(os.path.join(os.getcwd(), "output_files", "plots", "")):
         os.mkdir(os.path.join(os.getcwd(), "output_files", "plots", ""))
     input_file = os.path.join(
-        os.getcwd(), "output_files", "csvs", f"average_growth_data.csv"
+        os.getcwd(), output_directory, "csvs", f"average_growth_data.csv"
     )
     with open(input_file, "r") as file:
         rows = csv.reader(file)
@@ -143,12 +145,12 @@ def individual_plots(plot_type, x_lim, y_lim):
             plt.close(fig)
 
 
-def overlaid_plots(plot_type, x_lim, y_lim):
+def overlaid_plots(plot_type, x_lim, y_lim, output_directory="output_files"):
     ylabel, data_func = label_func(plot_type)
-    if not os.path.isdir(os.path.join(os.getcwd(), "output_files", "plots", "")):
-        os.mkdir(os.path.join(os.getcwd(), "output_files", "plots", ""))
+    if not os.path.isdir(os.path.join(os.getcwd(), output_directory, "plots", "")):
+        os.mkdir(os.path.join(os.getcwd(), output_directory, "plots", ""))
     input_file = os.path.join(
-        os.getcwd(), "output_files", "csvs", f"average_growth_data.csv"
+        os.getcwd(), output_directory, "csvs", f"average_growth_data.csv"
     )
     n_values = set()
     pdfs = set()
@@ -202,7 +204,14 @@ def overlaid_plots(plot_type, x_lim, y_lim):
             for key in plots:
                 plot_n, plot_pdf, plot_p, plot_T_p, plot_q, plot_sched_key = key
                 plot_k, plot_schedule = plot_sched_key
-                if all([n == plot_n, pdf == plot_pdf, p == plot_p, T_p == plot_T_p,]):
+                if all(
+                    [
+                        n == plot_n,
+                        pdf == plot_pdf,
+                        p == plot_p,
+                        T_p == plot_T_p,
+                    ]
+                ):
                     add_to_plot(plots[key], X, Y, plot_type, model, model, alpha=0.7)
         elif model == "Random Quarantine":
             for key in plots:
@@ -223,7 +232,14 @@ def overlaid_plots(plot_type, x_lim, y_lim):
             for key in plots:
                 plot_n, plot_pdf, plot_p, plot_T_p, plot_q, plot_sched_key = key
                 plot_k, plot_schedule = plot_sched_key
-                if all([n == plot_n, pdf == plot_pdf, p == plot_p, T_p == plot_T_p,]):
+                if all(
+                    [
+                        n == plot_n,
+                        pdf == plot_pdf,
+                        p == plot_p,
+                        T_p == plot_T_p,
+                    ]
+                ):
                     add_to_plot(plots[key], X, Y, plot_type, model, model, alpha=0.7)
         elif model == "Scheduled Quarantine":
             for key in plots:
@@ -242,7 +258,7 @@ def overlaid_plots(plot_type, x_lim, y_lim):
                     label = f"{k} groups - {schedule}"
                     add_to_plot(plots[key], X, Y, plot_type, model, label, alpha=0.7)
 
-    directory = os.path.join(os.getcwd(), "output_files", "plots", plot_type, "")
+    directory = os.path.join(os.getcwd(), output_directory, "plots", plot_type, "")
     if not os.path.isdir(directory):
         os.mkdir(directory)
     for key, plot in plots.items():
@@ -267,7 +283,8 @@ def overlaid_plots(plot_type, x_lim, y_lim):
         plot.legend(
             *zip(
                 *sorted(
-                    zip(*plot.get_legend_handles_labels()), key=lambda s: legend_sort(s[1])
+                    zip(*plot.get_legend_handles_labels()),
+                    key=lambda s: legend_sort(s[1]),
                 )
             )
         )
@@ -275,11 +292,11 @@ def overlaid_plots(plot_type, x_lim, y_lim):
         plt.close(fig)
 
 
-def plot_helper():
+def plot_helper(output_directory="output_files"):
     plot_types = ["new", "growth", "total"]
     x_lim, y_lim = defaultdict(int), defaultdict(int)
     for plot_type in plot_types:
-        overlaid_plots(plot_type, x_lim, y_lim)
+        overlaid_plots(plot_type, x_lim, y_lim, output_directory=output_directory)
         # individual_plots(plot_type, x_lim, y_lim)
 
 

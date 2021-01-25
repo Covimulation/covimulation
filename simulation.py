@@ -206,7 +206,9 @@ def sequential_main():
         print(arg)
         simulation(*arg)
         finished += 1
-        print(f"{finished} / {len(args)} ({finished / len(args) * 100 : 0.3f}%) finished")
+        print(
+            f"{finished} / {len(args)} ({finished / len(args) * 100 : 0.3f}%) finished"
+        )
     csv_helper()
     # plot_helper()
 
@@ -215,7 +217,7 @@ def parallel_main():
     number_of_processes = 4
     population_sizes = [10 ** 4, 5 * 10 ** 4]
     asymp_rates = [0.25, 0.3, 0.35, 0.4]
-    index_values = [0.001, 0.002, 0.01, 0.02]
+    index_values = [0.001, 0.003, 0.01, 0.02]
     population_pairs = product(population_sizes, index_values)
     number_of_tests = 1
     Tp_values = [0.1]
@@ -269,7 +271,9 @@ def parallel_main():
     )
     finished = 0
     for i in range(len(args) // number_of_processes + 1):
-        print(f"{finished} / {len(args)} ({finished / len(args) * 100 : 0.3f}%) finished")
+        print(
+            f"{finished} / {len(args)} ({finished / len(args) * 100 : 0.3f}%) finished"
+        )
         processes = []
         for arg in args[i * number_of_processes : (i + 1) * number_of_processes]:
             process = Process(target=simulation, args=arg)

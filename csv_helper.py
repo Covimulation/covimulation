@@ -6,9 +6,9 @@ import os
 import csv
 
 
-def merge_csvs():
+def merge_csvs(output_folder="output_files"):
     cwd = os.getcwd()
-    output_folder = os.path.join(cwd, "output_files", "csvs", "")
+    output_folder = os.path.join(cwd, output_folder, "csvs", "")
     output_file = os.path.join(output_folder, "growth_data.csv")
     files = [
         os.path.join(output_folder, file)
@@ -35,9 +35,9 @@ def add_arrays(A, B):
         return [A[i] + B[i] for i in range(len(A))] + B[len(A) :]
 
 
-def average_csv():
+def average_csv(output_folder="output_files"):
     cwd = os.getcwd()
-    output_folder = os.path.join(cwd, "output_files", "csvs", "")
+    output_folder = os.path.join(cwd, output_folder, "csvs", "")
     input_file = os.path.join(output_folder, "growth_data.csv")
     output_file = os.path.join(output_folder, "average_growth_data.csv")
     growth_rate = defaultdict(list)
@@ -62,7 +62,7 @@ def average_csv():
             schedule = row[7]
             asymp_rate = float(row[8])
             data = [int(x) for x in row[9:]]
-            key = (n, pdf, p, T_p, model, q, k, schedule, asymp_rate)
+            key = (n, pdf, p, T_p, model, q, k, schedule, asymp_rate, data[0])
             growth_rate[key] = add_arrays(growth_rate[key], data)
             counts[key] += 1
     with open(output_file, "w") as output_csv:
@@ -70,7 +70,18 @@ def average_csv():
             "n,pdf,p,model,T_p,q,num_grps,schedule,asymp_rate,num_trials,days\n"
         )
         for key in growth_rate:
-            n, pdf, p, T_p, model, q, k, schedule, asymp_rate, = key
+            (
+                n,
+                pdf,
+                p,
+                T_p,
+                model,
+                q,
+                k,
+                schedule,
+                asymp_rate,
+                index,
+            ) = key
             t = counts[key]
             growth_rate_string = ",".join([str(x / t) for x in growth_rate[key]])
             output_csv.write(
@@ -78,9 +89,9 @@ def average_csv():
             )
 
 
-def csv_helper():
-    merge_csvs()
-    average_csv()
+def csv_helper(output_folder="output_files"):
+    merge_csvs(output_folder)
+    average_csv(output_folder)
 
 
 def main():
